@@ -1,0 +1,26 @@
+# IDE 
+.vscode/
+
+# python virtual environment
+venv/
+.venv/
+
+# cache
+__pycache__/
+
+# environment variables
+.env
+.env.local
+.env.example
+
+# logs
+logs/
+*.log
+
+# db
+*.sqlite3
+
+# misc
+coverage/
+dist/
+build/
