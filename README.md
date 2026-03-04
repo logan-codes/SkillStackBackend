@@ -93,28 +93,35 @@ Here is a quick overview of the main folders and files you'll find in this proje
 
 ## How to Collaborate?
 
-1. Clone the repository
+1. Clone the repository and move to
 
 ```
-git clone -b DEV https://github.com/logan-codes/SkillStackBackend.git
+git clone -b DEV https://github.com/logan-codes/SkillStackBackend.git <folder name>
+cd <folder name>
 ```
 
 2. Create a new branch with name of the feature you are working on
 
 ```
-git checkout <branch-name>
+git checkout -b <branch-name>
 ```
 
 3. Push the branch to the repository
 
 ```
-git push origin <branch-name>
+git push -u origin <branch-name>
+```
+
+4. Stage all changes
+
+```
+git add <file name>
 ```
 
 4. Commit changes to your branch
 
 ```
-git commit -am <commit-message>
+git commit -m <commit-message>
 ```
 
 5. Push to the repository
