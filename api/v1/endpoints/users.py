@@ -1,5 +1,7 @@
-#The /login route the frontend calls
 # api/v1/endpoints/users.py
+# Login route — supports SSO (Option A):
+#   Frontend handles SSO (Google/Microsoft) and extracts the email.
+#   Frontend then sends that email here. Backend checks DB and returns our own JWT.
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -19,12 +21,14 @@ def login(
     db: Session = Depends(get_db)           # DB session auto injected
 ):
     """
-    Login endpoint.
-    1. Receive email_id from frontend
-    2. Check if user exists in DB
-    3. Check if user is active
-    4. Mint JWT token
-    5. Return token + user info
+    Login endpoint — SSO Option A.
+
+    Frontend handles SSO login (Google/Microsoft) and extracts the user's email.
+    Frontend sends that email here. Backend then:
+        1. Checks if the email exists in our DB
+        2. Checks if the user account is active
+        3. Mints our own JWT token
+        4. Returns the token + user info to the frontend
     """
 
     # ── Step 1: Find user in database ──
