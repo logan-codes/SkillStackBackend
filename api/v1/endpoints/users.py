@@ -73,7 +73,7 @@ def login(
 
 @router.get("/me")
 def get_my_profile(
-    current_user = Depends(get_current_user)   # bouncer checks token first
+    current_user = Depends(get_current_user) # bouncer checks token first
 ):
     """
     Example protected route.
