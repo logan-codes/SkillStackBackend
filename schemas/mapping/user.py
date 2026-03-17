@@ -1,5 +1,5 @@
 #What data comes IN and goes OUT (shapes)
-# schemas/user.py
+# schemas/mapping/user.py
 
 from pydantic import BaseModel, EmailStr
 from typing import Optional
