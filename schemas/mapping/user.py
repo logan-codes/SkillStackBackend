@@ -53,3 +53,10 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserInfo
+
+class RegisterRequest(BaseModel):
+    email_id: EmailStr
+    name: str
+    role_id: int
+    gender_id: int
+    password: str
