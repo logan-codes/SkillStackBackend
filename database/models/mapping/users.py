@@ -2,7 +2,7 @@
 
 from sqlalchemy import Column, Integer, BigInteger, SmallInteger, String, DateTime, Date, Numeric
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from datetime import datetime, timezone
 
 Base = declarative_base()
 
@@ -41,7 +41,7 @@ class User(Base):
     is_active           = Column(SmallInteger, nullable=False, default=1)
 
     # --- Timestamps ---
-    created_date        = Column(DateTime, default=datetime.utcnow)
-    updated_date        = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_date        = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_date        = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     created_by          = Column(BigInteger, nullable=True)
     updated_by          = Column(BigInteger, nullable=True)
