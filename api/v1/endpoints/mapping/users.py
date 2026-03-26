@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from database.init_db import get_db                        # DB session
 from database.crud.mapping.users import get_user_by_email           # Step 4
 from schemas.mapping.user import LoginRequest, LoginResponse, UserInfo  # Step 3
-from core.auth import create_access_token, get_current_user
+from core.auth import create_access_token, get_current_user     # Step 5
 
 router = APIRouter()
 
