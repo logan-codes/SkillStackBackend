@@ -60,6 +60,22 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
     return encoded_jwt
 
+def decode_bearer(token: str = Depends(oauth2_scheme)):
+    try:
+        # Decode the token using our secret key
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
+
+        # Extract user_id embedded in the token payload
+        user_id: int = payload.get("user_id")
+        role_id: int = payload.get("role_id")
+        return user_id,role_id
+    except:
+        return None
+
 
 # ──────────────────────────────────────────────────────────────
 # GET CURRENT USER (Token Verifier / Bouncer)
