@@ -3,6 +3,7 @@
 
 from fastapi import APIRouter
 from api.v1.endpoints.mapping import users          # import the users router
+from api.v1.endpoints.mapping import student_goal
 
 # This is the v1 router — parent of all v1 endpoints
 api_router = APIRouter()
@@ -15,7 +16,11 @@ api_router.include_router(
     prefix="/users",
     tags=["Users"]
 )
-
+api_router.include_router(
+    student_goal.router,
+    prefix="/student_goal",
+    tags=["Student Goals"]
+)
 # When you add more endpoints later, just add them here:
 # api_router.include_router(courses.router, prefix="/courses", tags=["Courses"])
 # api_router.include_router(admin.router,   prefix="/admin",   tags=["Admin"])
