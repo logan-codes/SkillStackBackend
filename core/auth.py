@@ -2,6 +2,7 @@
 # Handles all JWT logic:
 #   - Creating access tokens
 #   - Verifying tokens and returning the current authenticated user
+#   - Role-based access control (RBAC)
 
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -14,6 +15,22 @@ from sqlalchemy.orm import Session
 from core.config import settings
 from database.init_db import get_db
 from database.crud.mapping.users import get_user_by_id
+
+
+# ──────────────────────────────────────────────────────────────
+# ROLE CONSTANTS
+# Used for RBAC - Role-Based Access Control
+# ──────────────────────────────────────────────────────────────
+
+ADMIN = 1      # Admin role ID
+STAFF = 2      # Staff role ID
+STUDENT = 3    # Student role ID
+
+ROLE_NAMES = {
+    ADMIN: "admin",
+    STAFF: "staff",
+    STUDENT: "student"
+}
 
 
 # ──────────────────────────────────────────────────────────────
@@ -60,7 +77,28 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
     return encoded_jwt
 
-def decode_bearer(token: str = Depends(oauth2_scheme)):
+
+# ──────────────────────────────────────────────────────────────
+# DECODE BEARER TOKEN
+# Returns user_id and role_id from JWT token
+# ──────────────────────────────────────────────────────────────
+
+def decode_bearer(token: str = Depends(oauth2_scheme)) -> tuple:
+    """
+    Decodes the Bearer token and returns user_id and role_id.
+
+    Returns:
+        tuple: (user_id, role_id)
+
+    Raises:
+        HTTPException: 401 if token is invalid or expired
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
     try:
         # Decode the token using our secret key
         payload = jwt.decode(
@@ -69,12 +107,17 @@ def decode_bearer(token: str = Depends(oauth2_scheme)):
             algorithms=[settings.ALGORITHM]
         )
 
-        # Extract user_id embedded in the token payload
-        user_id: int = payload.get("user_id")
-        role_id: int = payload.get("role_id")
-        return user_id,role_id
-    except:
-        return None
+        # Extract user_id and role_id from the token payload
+        user_id = payload.get("user_id")
+        role_id = payload.get("role_id")
+
+        if user_id is None:
+            raise credentials_exception
+
+        return user_id, role_id
+
+    except JWTError:
+        raise credentials_exception
 
 
 # ──────────────────────────────────────────────────────────────
@@ -134,4 +177,33 @@ def get_current_user(
             detail="Account is inactive. Please contact admin."
         )
 
-    return user  # ✅ Token valid, user active — return to the protected route
+    return user  # Token valid, user active — return to the protected route
+
+
+# ──────────────────────────────────────────────────────────────
+# RBAC - ROLE-BASED ACCESS CONTROL DEPENDENCIES
+# ──────────────────────────────────────────────────────────────
+
+def require_admin(current_user = Depends(get_current_user)):
+    """Dependency for admin-only endpoints"""
+    if current_user.role_id != ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return current_user
+
+
+def require_staff(current_user = Depends(get_current_user)):
+    """Dependency for staff-only endpoints (includes admin)"""
+    if current_user.role_id not in [ADMIN, STAFF]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Staff access required"
+        )
+    return current_user
+
+
+def require_any_auth(current_user = Depends(get_current_user)):
+    """Dependency for any authenticated user (all roles)"""
+    return current_user
