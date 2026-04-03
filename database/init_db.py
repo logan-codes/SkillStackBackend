@@ -2,7 +2,8 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from core.config import settings              # reads DATABASE_URL from .env
+from core.config import settings
+from database.models.base import Base
 
 # Engine = the actual connection to PostgreSQL
 # pool_pre_ping=True means: "test connection before using it, reconnect if dropped"

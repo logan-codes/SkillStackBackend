@@ -4,6 +4,7 @@
 from fastapi import APIRouter
 from api.v1.endpoints.mapping import users
 from api.v1.endpoints.mapping import student_goal
+from api.v1.endpoints.mapping import user_social_links
 
 # This is the v1 router — parent of all v1 endpoints
 api_router = APIRouter()
@@ -24,6 +25,15 @@ api_router.include_router(
     student_goal.router,
     prefix="/goals",
     tags=["Goals"]
+)
+
+# ──────────────────────────────────────────────────────────────
+# USER SOCIAL LINKS ENDPOINTS
+# ──────────────────────────────────────────────────────────────
+api_router.include_router(
+    user_social_links.router,
+    prefix="/social-links",
+    tags=["Social Links"]
 )
 
 # ──────────────────────────────────────────────────────────────

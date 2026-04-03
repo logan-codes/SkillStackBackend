@@ -11,8 +11,9 @@ SkillStackBackend/
 ├── api/v1/
 │   └── endpoints/
 │       ├── mapping/          # User-scoped endpoints
-│       │   ├── users.py      # Login, profile, user endpoints
-│       │   └── student_goal.py  # Student goals CRUD
+│       │   ├── users.py         # Login, profile, user endpoints
+│       │   ├── student_goal.py   # Student goals CRUD
+│       │   └── user_social_links.py  # Social links CRUD
 │       └── master/           # Master table endpoints (future)
 ├── core/
 │   ├── auth.py              # JWT, RBAC, role constants
@@ -21,7 +22,7 @@ SkillStackBackend/
 ├── database/
 │   ├── models/
 │   │   ├── master/         # Reference tables (10 tables)
-│   │   └── mapping/        # Data tables (7 tables)
+│   │   └── mapping/        # Data tables (8 tables)
 │   └── crud/
 │       ├── master/         # Master CRUD operations
 │       └── mapping/        # Data CRUD operations
@@ -64,9 +65,9 @@ Frontend → API Endpoint → Schema Validation → CRUD → Model → Database
 
 | Role ID | Name | Access Level |
 |---------|------|-------------|
-| 1 | ADMIN | Full access |
+| 0 | ADMIN | Full access |
+| 1 | STUDENT | Basic authenticated access |
 | 2 | STAFF | Staff + Admin functions |
-| 3 | STUDENT | Basic authenticated access |
 
 ### Usage in Endpoints
 
@@ -112,13 +113,32 @@ def any_user_endpoint(current_user = Depends(get_current_user)):
 
 | Table | Description |
 |-------|-------------|
-| users | User accounts with academic info |
+| users | User accounts with academic info + hostel status |
+| user_social_links | Social/coding platform links (GitHub, LinkedIn, etc.) |
 | activity_master | Activities with token rewards |
 | workflow_stage_mapping | Links workflows to stages |
 | user_token_mapping | Token transactions |
 | user_activity_mapping | User progress in activities |
 | student_goal | Student goals and targets |
 | staff_student_mapping | Staff-Student relationships |
+
+### User Social Links - Platform Values
+
+| Platform | Description |
+|----------|-------------|
+| github | GitHub profile URL |
+| linkedin | LinkedIn profile URL |
+| leetcode | LeetCode profile URL |
+| hackerrank | HackerRank profile URL |
+| codechef | CodeChef profile URL |
+
+### Users Table - Hostel Field
+
+| Value | Meaning |
+|-------|---------|
+| 1 | Hostel |
+| 0 | Day Scholar |
+| null | Not specified |
 
 ---
 
@@ -149,6 +169,17 @@ def any_user_endpoint(current_user = Depends(get_current_user)):
 | PUT | `/api/v1/goals/{id}` | Auth | Update goal |
 | DELETE | `/api/v1/goals/{id}` | Auth | Delete goal |
 | GET | `/api/v1/goals/all/students` | Staff/Admin | Get all student goals |
+
+### User Social Links
+
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| GET | `/api/v1/social-links/` | Auth | Get all my links |
+| GET | `/api/v1/social-links/all` | Auth | Get formatted links |
+| POST | `/api/v1/social-links/` | Auth | Add new link |
+| PUT | `/api/v1/social-links/{id}` | Auth | Update link by ID |
+| PUT | `/api/v1/social-links/platform/{platform}` | Auth | Update link by platform |
+| DELETE | `/api/v1/social-links/{id}` | Auth | Delete link |
 
 ---
 
@@ -282,10 +313,10 @@ http://127.0.0.1:8000/docs
 
 | Layer | Status | Files |
 |-------|--------|-------|
-| Models | ✅ 100% | 17/17 |
-| Schemas | ✅ 10% | 2/17 |
-| CRUD | ✅ 10% | 2/17 |
-| Endpoints | ✅ 10% | 2/17 |
+| Models | ✅ 100% | 18/18 |
+| Schemas | ✅ 15% | 3/18 |
+| CRUD | ✅ 15% | 3/18 |
+| Endpoints | ✅ 15% | 3/18 |
 | RBAC | ✅ Implemented | auth.py |
 
 ### Implemented Features
@@ -295,6 +326,7 @@ http://127.0.0.1:8000/docs
 - ✅ Role-Based Access Control (RBAC)
 - ✅ User Profile endpoints
 - ✅ Student Goals CRUD
+- ✅ User Social Links CRUD
 
 ### Pending Features
 

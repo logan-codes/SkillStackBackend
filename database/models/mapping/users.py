@@ -1,10 +1,8 @@
 # database/models/mapping/users.py
 
 from sqlalchemy import Column, Integer, BigInteger, SmallInteger, String, DateTime, Date, Numeric
-from sqlalchemy.ext.declarative import declarative_base
+from database.models.base import Base
 from datetime import datetime, timezone
-
-Base = declarative_base()
 
 
 class User(Base):
@@ -35,6 +33,7 @@ class User(Base):
     community           = Column(String(50), nullable=True)
     blood_grp           = Column(String(5), nullable=True)
     birthdate           = Column(Date, nullable=True)
+    hostel              = Column(SmallInteger, nullable=True)  # 1=Hostel, 0=Day Scholar
 
     # --- Status ---
     total_tokens        = Column(Integer, default=0)

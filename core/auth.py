@@ -22,14 +22,14 @@ from database.crud.mapping.users import get_user_by_id
 # Used for RBAC - Role-Based Access Control
 # ──────────────────────────────────────────────────────────────
 
-ADMIN = 1      # Admin role ID
+ADMIN = 0      # Admin role ID (highest privilege)
+STUDENT = 1    # Student role ID
 STAFF = 2      # Staff role ID
-STUDENT = 3    # Student role ID
 
 ROLE_NAMES = {
     ADMIN: "admin",
-    STAFF: "staff",
-    STUDENT: "student"
+    STUDENT: "student",
+    STAFF: "staff"
 }
 
 
