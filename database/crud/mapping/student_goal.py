@@ -37,6 +37,7 @@ class StudentGoalRepo:
     def create_goal(
         self,
         user_id: int,
+        activity_id: int,
         goal_name: str,
         target_tokens: int,
         deadline=None,
@@ -44,6 +45,7 @@ class StudentGoalRepo:
     ) -> StudentGoal:
         goal = StudentGoal(
             user_id=user_id,
+            activity_id=activity_id,
             goal_name=goal_name,
             target_tokens=target_tokens,
             current_tokens=0,

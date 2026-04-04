@@ -14,6 +14,7 @@ class UserActivityMapping(Base):
     proof_description = Column(String(255), nullable=True)
     custom_name = Column(String(200), nullable=True)
     permission_proof = Column(String(500), nullable=True)
-    deadline = Column(Date, nullable=True)
+    start_date = Column(Date, nullable=True)
+    end_date = Column(Date, nullable=True)
     ai_verification_result = Column(Text, nullable=True)
     tokens_earned = Column(Integer, default=0)

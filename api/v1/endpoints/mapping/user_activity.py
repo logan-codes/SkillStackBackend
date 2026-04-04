@@ -7,7 +7,6 @@ from database.crud.mapping.user_activity_mapping import (
     start_activity,
     submit_proof,
     delete_user_activity,
-    update_user_activity,
     get_user_activities,
     get_user_activity_by_id,
 )
@@ -35,7 +34,8 @@ def start_my_activity(
         activity_id=activity_id,
         custom_name=request.custom_name,
         permission_proof=request.permission_proof,
-        deadline=request.deadline,
+        start_date=request.start_date,
+        end_date=request.end_date,
     )
     if result is None:
         raise HTTPException(status_code=404, detail="Activity not found")
@@ -51,15 +51,38 @@ def update_my_activity(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    user_activity = update_user_activity(
-        db=db,
-        user_activity_id=user_activity_id,
-        user_id=current_user.id,
-        custom_name=request.custom_name,
-        deadline=request.deadline,
-    )
+    user_activity = get_user_activity_by_id(db, user_activity_id, current_user.id)
     if not user_activity:
         raise HTTPException(status_code=404, detail="Activity not found")
+
+    # PENDING: can edit custom_name, start_date, end_date, permission_proof, proof_description
+    if user_activity.status_id == 1:
+        if request.custom_name is not None:
+            user_activity.custom_name = request.custom_name
+        if request.start_date is not None:
+            user_activity.start_date = request.start_date
+        if request.end_date is not None:
+            user_activity.end_date = request.end_date
+        if request.permission_proof is not None:
+            user_activity.permission_proof = request.permission_proof
+        if request.proof_description is not None:
+            user_activity.proof_description = request.proof_description
+
+    # ONGOING: can edit start_date, end_date only
+    elif user_activity.status_id == 2:
+        if request.start_date is not None:
+            user_activity.start_date = request.start_date
+        if request.end_date is not None:
+            user_activity.end_date = request.end_date
+
+    # SUBMITTED/COMPLETED: cannot edit
+    else:
+        raise HTTPException(
+            status_code=400, detail="Cannot edit activity after submission"
+        )
+
+    db.commit()
+    db.refresh(user_activity)
     return user_activity
 
 

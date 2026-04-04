@@ -7,8 +7,7 @@ from datetime import datetime, date
 class UserActivityStart(BaseModel):
     custom_name: str
     permission_proof: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    deadline: Optional[date] = None
 
 
 class UserActivityProof(BaseModel):
@@ -18,10 +17,9 @@ class UserActivityProof(BaseModel):
 
 class UserActivityUpdate(BaseModel):
     custom_name: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    deadline: Optional[date] = None
     permission_proof: Optional[str] = None
-    proof_description: Optional[str] = None
+    description: Optional[str] = None
 
 
 class UserActivityResponse(BaseModel):
@@ -34,8 +32,7 @@ class UserActivityResponse(BaseModel):
     proof_document: Optional[str]
     proof_description: Optional[str]
     permission_proof: Optional[str]
-    start_date: Optional[date]
-    end_date: Optional[date]
+    deadline: Optional[date]
     ai_verification_result: Optional[str]
     tokens_earned: int
     created_date: Optional[datetime]
