@@ -1,41 +1,18 @@
-#What data comes IN and goes OUT (shapes)
-# schemas/mapping/user.py
-
+# User schemas for API validation
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 
-# ─────────────────────────────────────────
-# REQUEST schemas  (data coming IN)
-# ─────────────────────────────────────────
-
 class LoginRequest(BaseModel):
-    """
-    What the frontend sends to /login
-    POST /api/v1/users/login
-    Body: { "email_id": "student@college.edu" }
-    """
-    email_id: EmailStr                       # EmailStr auto validates it's a real email format
+    email_id: EmailStr
 
-
-# ─────────────────────────────────────────
-# RESPONSE schemas  (data going OUT)
-# ─────────────────────────────────────────
 
 class TokenResponse(BaseModel):
-    """
-    What YOUR backend returns after successful login
-    { "access_token": "eyJ...", "token_type": "bearer" }
-    """
     access_token: str
-    token_type: str = "bearer"               # always "bearer", frontend needs this
+    token_type: str = "bearer"
 
 
 class UserInfo(BaseModel):
-    """
-    Optional: safe user details to return alongside token
-    NEVER return password, never return raw DB row
-    """
     id: int
     name: Optional[str] = None
     email_id: str
@@ -43,16 +20,14 @@ class UserInfo(BaseModel):
     is_active: int
 
     class Config:
-        from_attributes = True               # allows reading from SQLAlchemy model directly
+        from_attributes = True
 
 
 class LoginResponse(BaseModel):
-    """
-    Full response after login — token + basic user info
-    """
     access_token: str
     token_type: str = "bearer"
     user: UserInfo
+
 
 class RegisterRequest(BaseModel):
     email_id: EmailStr
@@ -60,3 +35,11 @@ class RegisterRequest(BaseModel):
     role_id: int
     gender_id: int
     password: str
+
+
+class StudentProfileUpdate(BaseModel):
+    github_url: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    leetcode_url: Optional[str] = None
+    codeforces_url: Optional[str] = None
+    hackerrank_url: Optional[str] = None

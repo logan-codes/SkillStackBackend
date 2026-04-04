@@ -1,16 +1,9 @@
-# database/models/master/workflow.py
-
-from sqlalchemy import Column, Integer, String, SmallInteger, DateTime
+# Workflow master model
+from sqlalchemy import Column, String
 from database.models.base import Base
-from datetime import datetime, timezone
+
 
 class Workflow(Base):
     __tablename__ = "workflow_master"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)  # e.g., "Event Workflow", "Activity Workflow"
-    is_active = Column(SmallInteger, default=1, nullable=False)
-    created_date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_date = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    created_by = Column(Integer, nullable=True)
-    updated_by = Column(Integer, nullable=True)
+
+    name = Column(String(100), nullable=False)
