@@ -1,5 +1,5 @@
 # Malpractice master model
-from sqlalchemy import Column, String
+from sqlalchemy import Column, Integer, String
 from database.models.base import Base
 
 

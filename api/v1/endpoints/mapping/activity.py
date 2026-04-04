@@ -25,6 +25,11 @@ def get_activity(activity_id: int, db: Session = Depends(get_db)):
     return activity
 
 
+
+
+
+#Admin endpoints for managing activities
+
 @router.post("/", response_model=ActivityResponse, status_code=status.HTTP_201_CREATED)
 def create_activity(
     request: ActivityCreate,
