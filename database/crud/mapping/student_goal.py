@@ -41,7 +41,6 @@ class StudentGoalRepo:
         goal_name: str,
         target_tokens: int,
         deadline=None,
-        status_id: int = 1,
     ) -> StudentGoal:
         goal = StudentGoal(
             user_id=user_id,
@@ -50,7 +49,6 @@ class StudentGoalRepo:
             target_tokens=target_tokens,
             current_tokens=0,
             deadline=deadline,
-            status_id=status_id,
             is_active=1,
         )
         self.db.add(goal)
@@ -65,7 +63,6 @@ class StudentGoalRepo:
         target_tokens=None,
         current_tokens=None,
         deadline=None,
-        status_id=None,
     ) -> StudentGoal:
         goal = self.get_goal_by_id(goal_id)
         if not goal:
@@ -78,8 +75,6 @@ class StudentGoalRepo:
             goal.current_tokens = current_tokens
         if deadline is not None:
             goal.deadline = deadline
-        if status_id is not None:
-            goal.status_id = status_id
         goal.updated_date = datetime.now()
         self.db.commit()
         self.db.refresh(goal)

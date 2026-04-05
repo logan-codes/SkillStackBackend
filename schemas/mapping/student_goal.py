@@ -28,7 +28,6 @@ class StudentGoalResponse(BaseModel):
     target_tokens: int
     current_tokens: int
     deadline: Optional[date] = None
-    status_id: int
     is_active: int
     created_date: Optional[datetime] = None
     updated_date: Optional[datetime] = None

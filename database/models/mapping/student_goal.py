@@ -12,4 +12,3 @@ class StudentGoal(Base):
     target_tokens = Column(Integer, nullable=False)
     current_tokens = Column(Integer, default=0)
     deadline = Column(Date, nullable=True)
-    status_id = Column(Integer, ForeignKey("status_master.id"), nullable=False)
