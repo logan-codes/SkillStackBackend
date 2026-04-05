@@ -34,3 +34,8 @@ class StudentGoalResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class BulkDeleteRequest(BaseModel):
+    goal_ids: List[int]
+    new_activities: Optional[List[PlannedActivity]] = None

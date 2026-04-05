@@ -13,6 +13,7 @@ except ImportError:
     HAS_TQDM = False
     tqdm = lambda x, **kwargs: x
 
+from sqlalchemy import text
 from database.init_db import SessionLocal, engine
 from database.models.base import Base
 from database.models.master.activity_type_master import ActivityTypeMaster
@@ -566,16 +567,27 @@ def seed_activities(db):
 
 
 @register_seed("workflow_stage_mapping")
-def seed_workflow_stages(db, wf_stages_data):
+def seed_workflow_stages(db):
+    from database.models.master.stage import Stage
+    from database.models.master.workflow import Workflow
+
+    standard_wf = db.query(Workflow).filter(Workflow.name == "Standard").first()
+    fasttrack_wf = db.query(Workflow).filter(Workflow.name == "Fast-Track").first()
+
+    standard_stages = db.query(Stage).filter(Stage.name == "Submission").all()
+    fasttrack_stages = db.query(Stage).filter(Stage.name == "Approved").all()
+
     mappings = []
-    for wf, stage, order in wf_stages_data:
-        mapping = WorkflowStageMapping(
-            workflow_id=wf.id,
-            stage_id=stage.id,
-            stage_order=order,
+    for i, (s, f) in enumerate(zip(standard_stages[:3], fasttrack_stages[:3])):
+        mapping1 = WorkflowStageMapping(
+            workflow_id=standard_wf.id, stage_id=s.id, stage_order=i + 1
         )
-        db.add(mapping)
-        mappings.append(mapping)
+        mapping2 = WorkflowStageMapping(
+            workflow_id=fasttrack_wf.id, stage_id=f.id, stage_order=i + 1
+        )
+        db.add(mapping1)
+        db.add(mapping2)
+        mappings.extend([mapping1, mapping2])
     db.commit()
     return mappings
 
@@ -749,7 +761,6 @@ def seed_student_goals(db):
         .filter(Activity.activity_name == "Internship-InOffice")
         .first()
     )
-    status_pending = db.query(Status).filter(Status.name == "Pending").first()
 
     goals = [
         StudentGoal(
@@ -759,7 +770,6 @@ def seed_student_goals(db):
             target_tokens=6,
             current_tokens=0,
             deadline=date(2026, 12, 31),
-            status_id=status_pending.id,
         ),
         StudentGoal(
             user_id=student.id,
@@ -768,7 +778,6 @@ def seed_student_goals(db):
             target_tokens=6,
             current_tokens=0,
             deadline=date(2026, 6, 30),
-            status_id=status_pending.id,
         ),
     ]
 
@@ -794,6 +803,21 @@ def reset_database(db):
     for table in DELETE_ORDER:
         db.query(table).delete()
         db.commit()
+
+    db.execute(
+        text("""
+        DO $$
+        DECLARE
+            seq_name TEXT;
+        BEGIN
+            FOR seq_name IN SELECT sequence_name FROM information_schema.sequences LOOP
+                EXECUTE 'ALTER SEQUENCE ' || seq_name || ' RESTART WITH 1';
+            END LOOP;
+        END $$;
+    """)
+    )
+    db.commit()
+
     print("Database reset complete.\n")
 
 

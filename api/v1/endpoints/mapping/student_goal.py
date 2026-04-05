@@ -9,8 +9,16 @@ from schemas.mapping.student_goal import (
     StudentGoalDelete,
     PlannedActivity,
     StudentGoalResponse,
+    BulkDeleteRequest,
 )
 from core.auth import get_current_user, require_staff
+from schemas.mapping.student_goal import (
+    StudentGoalCreate,
+    StudentGoalDelete,
+    PlannedActivity,
+    StudentGoalResponse,
+    BulkDeleteRequest,
+)
 
 router = APIRouter()
 
@@ -54,6 +62,69 @@ def create_goals(
         goals.append(goal)
 
     return goals
+
+
+@router.delete("/bulk")
+def bulk_delete_goals(
+    request: BulkDeleteRequest,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    repo = StudentGoalRepo(db)
+
+    # Validate all goal_ids belong to user
+    for goal_id in request.goal_ids:
+        goal = repo.get_goal_by_id(goal_id)
+        if not goal:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Goal {goal_id} not found",
+            )
+        if goal.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied for goal {goal_id}",
+            )
+
+    # Get other active goals total (excluding the ones being deleted)
+    all_goals = repo.get_user_goals(current_user.id)
+    other_goals = [g for g in all_goals if g.id not in request.goal_ids]
+    other_total = sum(g.target_tokens for g in other_goals)
+
+    # Calculate new activities total
+    new_total = (
+        sum(a.tokens for a in request.new_activities) if request.new_activities else 0
+    )
+
+    # Validate: must have at least 16 tokens after delete
+    if (other_total + new_total) < 16:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Must maintain at least 16 tokens total",
+        )
+
+    # Delete all specified goals
+    for goal_id in request.goal_ids:
+        repo.delete_goal(goal_id)
+
+    # Create new goals if activities provided
+    created_goals = []
+    if request.new_activities:
+        for activity in request.new_activities:
+            goal = repo.create_goal(
+                user_id=current_user.id,
+                activity_id=activity.activity_id,
+                goal_name=activity.activity_name,
+                target_tokens=activity.tokens,
+                deadline=activity.deadline,
+            )
+            created_goals.append(goal)
+
+    return {
+        "deleted_count": len(request.goal_ids),
+        "deleted_ids": request.goal_ids,
+        "created": created_goals,
+    }
 
 
 @router.delete("/{goal_id}")

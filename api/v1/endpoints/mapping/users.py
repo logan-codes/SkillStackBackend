@@ -61,9 +61,30 @@ def get_my_full_profile(
         "email_id": user.email_id,
         "name": user.name,
         "role_id": user.role_id,
+        "gender_id": user.gender_id,
+        "register_no": user.register_no,
+        "staff_id": user.staff_id,
+        "program_dept_id": user.program_dept_id,
+        "year": user.year,
+        "semester": user.semester,
+        "cgpa": user.cgpa,
+        "batch_start_year": user.batch_start_year,
+        "batch_end_year": user.batch_end_year,
+        "contact_no": user.contact_no,
+        "nationality": user.nationality,
+        "mother_tongue": user.mother_tongue,
+        "religion": user.religion,
+        "community": user.community,
+        "blood_grp": user.blood_grp,
+        "birthdate": user.birthdate,
+        "total_tokens": user.total_tokens,
+        "github_url": user.github_url,
+        "linkedin_url": user.linkedin_url,
+        "leetcode_url": user.leetcode_url,
+        "codeforces_url": user.codeforces_url,
+        "hackerrank_url": user.hackerrank_url,
         "is_active": user.is_active,
     }
-
 
 
 @router.get("/all")
