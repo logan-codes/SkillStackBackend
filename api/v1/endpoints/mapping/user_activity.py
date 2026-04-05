@@ -9,6 +9,7 @@ from database.crud.mapping.user_activity_mapping import (
     delete_user_activity,
     get_user_activities,
     get_user_activity_by_id,
+    get_available_categories,
 )
 from schemas.mapping.user_activity_mapping import (
     UserActivityStart,
@@ -19,6 +20,33 @@ from schemas.mapping.user_activity_mapping import (
 from core.auth import get_current_user
 
 router = APIRouter()
+
+
+@router.get("/activities", response_model=List[dict])
+def get_activities_for_workflow(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get all generic activities available for workflow"""
+    from database.models.master.activity_master import ActivityMaster
+
+    activities = db.query(ActivityMaster).filter(ActivityMaster.is_active == 1).all()
+    return [{"id": a.id, "activity_name": a.activity_name} for a in activities]
+
+
+@router.get("/{activity_id}/categories", response_model=List[dict])
+def get_activity_categories(
+    activity_id: int,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get available categories (student goals) for an activity"""
+    categories = get_available_categories(db, activity_id)
+    if not categories:
+        raise HTTPException(
+            status_code=404, detail="No categories found for this activity"
+        )
+    return categories
 
 
 @router.post("/{activity_id}/start", response_model=UserActivityResponse)
@@ -99,12 +127,23 @@ def submit_my_proof(
         user_id=current_user.id,
         proof=request.proof,
         proof_description=request.proof_description,
+        student_goal_id=request.student_goal_id,
     )
     if result is None:
         raise HTTPException(status_code=404, detail="Activity not found")
     if result == "invalid_status":
         raise HTTPException(
             status_code=400, detail="Can only submit proof when status is ONGOING"
+        )
+    if result == "student_goal_required":
+        raise HTTPException(
+            status_code=400, detail="Please select a category (student_goal_id)"
+        )
+    if result == "invalid_student_goal":
+        raise HTTPException(status_code=400, detail="Invalid category selected")
+    if result == "invalid_mapping":
+        raise HTTPException(
+            status_code=400, detail="Selected category does not match this activity"
         )
     return result
 

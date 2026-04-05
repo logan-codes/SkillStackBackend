@@ -6,8 +6,11 @@ from database.init_db import engine
 from database.models.base import Base
 
 # Import all models to register them with Base.metadata
-from database.models.mapping import users, activity, student_goal, user_activity_mapping
+from database.models.mapping import users, student_goal, user_activity_mapping
+from database.models.mapping import activity_studentgoal_mapping
 from database.models.master import (
+    activity_master,
+    student_goal_master,
     activity_type_master,
     application_config,
     event_master,

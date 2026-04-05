@@ -1,7 +1,8 @@
 # Quick script to view database tables
 from database.init_db import SessionLocal
 from database.models.mapping.users import User
-from database.models.mapping.activity import Activity
+from database.models.master.activity_master import ActivityMaster
+from database.models.master.student_goal_master import StudentGoalMaster
 from database.models.mapping.student_goal import StudentGoal
 from database.models.mapping.user_activity_mapping import UserActivityMapping
 
@@ -18,17 +19,23 @@ for u in users:
     )
 
 print("\n" + "=" * 50)
-print("=== ACTIVITIES ===")
+print("=== ACTIVITY MASTER (Generic) ===")
 print("=" * 50)
-activities = db.query(Activity).all()
+activities = db.query(ActivityMaster).all()
 print(f"Total: {len(activities)} records\n")
 for a in activities:
-    print(
-        f"ID: {a.id} | Name: {a.activity_name} | Token: {a.token} | Type: {a.activity_type_id}"
-    )
+    print(f"ID: {a.id} | Name: {a.activity_name} | Type: {a.activity_type_id}")
 
 print("\n" + "=" * 50)
-print("=== STUDENT GOALS ===")
+print("=== STUDENT GOAL MASTER ===")
+print("=" * 50)
+sg_master = db.query(StudentGoalMaster).all()
+print(f"Total: {len(sg_master)} records\n")
+for s in sg_master:
+    print(f"ID: {s.id} | Name: {s.activity_name} | Token: {s.token}")
+
+print("\n" + "=" * 50)
+print("=== STUDENT GOALS (User selected) ===")
 print("=" * 50)
 goals = db.query(StudentGoal).all()
 print(f"Total: {len(goals)} records\n")
@@ -44,8 +51,8 @@ user_activities = db.query(UserActivityMapping).all()
 print(f"Total: {len(user_activities)} records\n")
 for ua in user_activities:
     print(
-        f"ID: {ua.id} | User: {ua.user_id} | Activity: {ua.activity_id} | Custom: {ua.custom_name} | Status: {ua.status_id} | Tokens: {ua.tokens_earned}"
+        f"ID: {ua.id} | User: {ua.user_id} | Activity: {ua.activity_id} | StudentGoal: {ua.student_goal_id} | Custom: {ua.custom_name} | Status: {ua.status_id} | Tokens: {ua.tokens_earned}"
     )
 
 db.close()
-print("\n✅ Database view complete!")
+print("\nDone! Database view complete!")

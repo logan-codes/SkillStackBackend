@@ -26,22 +26,28 @@ from database.models.master.roles import Role
 from database.models.master.stage import Stage
 from database.models.master.status import Status
 from database.models.master.workflow import Workflow
-from database.models.mapping.activity import Activity
-from database.models.mapping.staff_student_mapping import StaffStudentMapping
+from database.models.master.activity_master import ActivityMaster
+from database.models.master.student_goal_master import StudentGoalMaster
+from database.models.mapping.activity_studentgoal_mapping import (
+    ActivityStudentGoalMapping,
+)
 from database.models.mapping.student_goal import StudentGoal
 from database.models.mapping.user_activity_mapping import UserActivityMapping
 from database.models.mapping.user_token_mapping import UserTokenMapping
 from database.models.mapping.users import User
 from database.models.mapping.workflow_stage_mapping import WorkflowStageMapping
+from database.models.mapping.staff_student_mapping import StaffStudentMapping
 
 
 DELETE_ORDER = [
     UserActivityMapping,
     StudentGoal,
+    ActivityStudentGoalMapping,
     UserTokenMapping,
     StaffStudentMapping,
     User,
-    Activity,
+    StudentGoalMaster,
+    ActivityMaster,
     WorkflowStageMapping,
     Stage,
     Workflow,
@@ -354,6 +360,7 @@ def seed_users(db):
 
 @register_seed("activity_master")
 def seed_activities(db):
+    """Seed generic activities for workflow (activity_master table)"""
     type_technical = (
         db.query(ActivityTypeMaster)
         .filter(ActivityTypeMaster.type_name == "Technical")
@@ -371,192 +378,99 @@ def seed_activities(db):
     )
     workflow = db.query(Workflow).filter(Workflow.name == "Standard").first()
 
+    # Generic activities for workflow
     activities = [
-        Activity(
-            activity_name="NPTEL-Pass",
-            token=2,
+        ActivityMaster(
+            activity_name="NPTEL",
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
-            activity_name="NPTEL-Elite+Silver",
-            token=3,
-            activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
-        ),
-        Activity(
-            activity_name="NPTEL-Elite+Gold",
-            token=4,
-            activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
-        ),
-        Activity(
+        ActivityMaster(
             activity_name="Coursera",
-            token=4,
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
+        ActivityMaster(
             activity_name="Udemy",
-            token=3,
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
+        ActivityMaster(
             activity_name="Workshop",
-            token=2,
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
-            activity_name="Hackathon-Participate",
-            token=3,
+        ActivityMaster(
+            activity_name="Hackathon",
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
-            activity_name="Hackathon(Internal)-Win",
-            token=4,
-            activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
-        ),
-        Activity(
-            activity_name="Hackathon(External)-Win",
-            token=6,
-            activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
-        ),
-        Activity(
+        ActivityMaster(
             activity_name="Other College Events",
-            token=3,
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
+        ActivityMaster(
             activity_name="Organizing Events",
-            token=2,
             activity_type_id=type_cultural.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
+        ActivityMaster(
             activity_name="Cultural",
-            token=3,
             activity_type_id=type_cultural.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
+        ActivityMaster(
             activity_name="Sports/Music",
-            token=3,
             activity_type_id=type_sports.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
+        ActivityMaster(
             activity_name="NCC/NSS Activities",
-            token=3,
             activity_type_id=type_sports.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
+        ActivityMaster(
             activity_name="Volunteer Activities",
-            token=3,
             activity_type_id=type_cultural.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
+        ActivityMaster(
             activity_name="Value Added Courses",
-            token=4,
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
-            activity_name="Internship-Online",
-            token=4,
+        ActivityMaster(
+            activity_name="Internship",
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
-            activity_name="Internship-InOffice",
-            token=6,
+        ActivityMaster(
+            activity_name="Certification",
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
-            activity_name="Certification-Internal/Local",
-            token=4,
-            activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
-        ),
-        Activity(
-            activity_name="Certification-Global",
-            token=6,
-            activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
-        ),
-        Activity(
+        ActivityMaster(
             activity_name="Research Working Prototype",
-            token=6,
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
-            activity_name="Coding-Contest-Participation",
-            token=3,
+        ActivityMaster(
+            activity_name="Coding-Contest",
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
-            activity_name="Coding-Contest-Winner",
-            token=5,
-            activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
-        ),
-        Activity(
+        ActivityMaster(
             activity_name="Research-paper",
-            token=4,
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
+        ActivityMaster(
             activity_name="Best Paper Award",
-            token=6,
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
-            activity_name="Research Resource Person(Internal)",
-            token=3,
+        ActivityMaster(
+            activity_name="Research Resource Person",
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
-            activity_name="Research Resource Person(External)",
-            token=5,
-            activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
-        ),
-        Activity(
+        ActivityMaster(
             activity_name="Study Abroad",
-            token=6,
             activity_type_id=type_cultural.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
+        ActivityMaster(
             activity_name="Seed Funding Project",
-            token=8,
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
+        ActivityMaster(
             activity_name="Startup",
-            token=12,
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
-        Activity(
-            activity_name="CGPA 8.5 And Above",
-            token=4,
+        ActivityMaster(
+            activity_name="CGPA",
             activity_type_id=type_technical.id,
-            workflow_id=workflow.id,
         ),
     ]
 
@@ -564,6 +478,390 @@ def seed_activities(db):
         db.add(activity)
     db.commit()
     return activities
+
+
+@register_seed("student_goal_master")
+def seed_student_goal_master(db):
+    """Seed activities for student goals (student_goal_master table)"""
+    type_technical = (
+        db.query(ActivityTypeMaster)
+        .filter(ActivityTypeMaster.type_name == "Technical")
+        .first()
+    )
+    type_cultural = (
+        db.query(ActivityTypeMaster)
+        .filter(ActivityTypeMaster.type_name == "Cultural")
+        .first()
+    )
+    type_sports = (
+        db.query(ActivityTypeMaster)
+        .filter(ActivityTypeMaster.type_name == "Sports")
+        .first()
+    )
+    workflow = db.query(Workflow).filter(Workflow.name == "Standard").first()
+
+    # Student goal activities (specific outcomes)
+    student_goals = [
+        StudentGoalMaster(
+            activity_name="NPTEL-Pass",
+            token=2,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="NPTEL-Elite+Silver",
+            token=3,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="NPTEL-Elite+Gold",
+            token=4,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Coursera",
+            token=4,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Udemy",
+            token=3,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Workshop",
+            token=2,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Hackathon-Participate",
+            token=3,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Hackathon(Internal)-Win",
+            token=4,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Hackathon(External)-Win",
+            token=6,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Other College Events",
+            token=3,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Organizing Events",
+            token=2,
+            activity_type_id=type_cultural.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Cultural",
+            token=3,
+            activity_type_id=type_cultural.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Sports/Music",
+            token=3,
+            activity_type_id=type_sports.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="NCC/NSS Activities",
+            token=3,
+            activity_type_id=type_sports.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Volunteer Activities",
+            token=3,
+            activity_type_id=type_cultural.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Value Added Courses",
+            token=4,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Internship-Online",
+            token=4,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Internship-InOffice",
+            token=6,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Certification-Internal/Local",
+            token=4,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Certification-Global",
+            token=6,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Research Working Prototype",
+            token=6,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Coding-Contest-Participation",
+            token=3,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Coding-Contest-Winner",
+            token=5,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Research-paper",
+            token=4,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Best Paper Award",
+            token=6,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Research Resource Person(Internal)",
+            token=3,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Research Resource Person(External)",
+            token=5,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Study Abroad",
+            token=6,
+            activity_type_id=type_cultural.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Seed Funding Project",
+            token=8,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="Startup",
+            token=12,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+        StudentGoalMaster(
+            activity_name="CGPA 8.5 And Above",
+            token=4,
+            activity_type_id=type_technical.id,
+            workflow_id=workflow.id,
+        ),
+    ]
+
+    for goal in student_goals:
+        db.add(goal)
+    db.commit()
+    return student_goals
+
+
+@register_seed("activity_studentgoalmapping")
+def seed_activity_studentgoal_mapping(db):
+    """Seed mapping between generic activities and student goals"""
+
+    # Get all activities and student goals by name
+    activities = {a.activity_name: a for a in db.query(ActivityMaster).all()}
+    student_goals = {s.activity_name: s for s in db.query(StudentGoalMaster).all()}
+
+    mappings = []
+
+    # NPTEL mapping
+    if "NPTEL" in activities and "NPTEL-Pass" in student_goals:
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["NPTEL"].id,
+                student_goal_id=student_goals["NPTEL-Pass"].id,
+            )
+        )
+    if "NPTEL" in activities and "NPTEL-Elite+Silver" in student_goals:
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["NPTEL"].id,
+                student_goal_id=student_goals["NPTEL-Elite+Silver"].id,
+            )
+        )
+    if "NPTEL" in activities and "NPTEL-Elite+Gold" in student_goals:
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["NPTEL"].id,
+                student_goal_id=student_goals["NPTEL-Elite+Gold"].id,
+            )
+        )
+
+    # Hackathon mapping
+    if "Hackathon" in activities and "Hackathon-Participate" in student_goals:
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["Hackathon"].id,
+                student_goal_id=student_goals["Hackathon-Participate"].id,
+            )
+        )
+    if "Hackathon" in activities and "Hackathon(Internal)-Win" in student_goals:
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["Hackathon"].id,
+                student_goal_id=student_goals["Hackathon(Internal)-Win"].id,
+            )
+        )
+    if "Hackathon" in activities and "Hackathon(External)-Win" in student_goals:
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["Hackathon"].id,
+                student_goal_id=student_goals["Hackathon(External)-Win"].id,
+            )
+        )
+
+    # Coding-Contest mapping
+    if (
+        "Coding-Contest" in activities
+        and "Coding-Contest-Participation" in student_goals
+    ):
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["Coding-Contest"].id,
+                student_goal_id=student_goals["Coding-Contest-Participation"].id,
+            )
+        )
+    if "Coding-Contest" in activities and "Coding-Contest-Winner" in student_goals:
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["Coding-Contest"].id,
+                student_goal_id=student_goals["Coding-Contest-Winner"].id,
+            )
+        )
+
+    # Internship mapping
+    if "Internship" in activities and "Internship-Online" in student_goals:
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["Internship"].id,
+                student_goal_id=student_goals["Internship-Online"].id,
+            )
+        )
+    if "Internship" in activities and "Internship-InOffice" in student_goals:
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["Internship"].id,
+                student_goal_id=student_goals["Internship-InOffice"].id,
+            )
+        )
+
+    # Certification mapping
+    if (
+        "Certification" in activities
+        and "Certification-Internal/Local" in student_goals
+    ):
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["Certification"].id,
+                student_goal_id=student_goals["Certification-Internal/Local"].id,
+            )
+        )
+    if "Certification" in activities and "Certification-Global" in student_goals:
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["Certification"].id,
+                student_goal_id=student_goals["Certification-Global"].id,
+            )
+        )
+
+    # Research Resource Person mapping
+    if (
+        "Research Resource Person" in activities
+        and "Research Resource Person(Internal)" in student_goals
+    ):
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["Research Resource Person"].id,
+                student_goal_id=student_goals["Research Resource Person(Internal)"].id,
+            )
+        )
+    if (
+        "Research Resource Person" in activities
+        and "Research Resource Person(External)" in student_goals
+    ):
+        mappings.append(
+            ActivityStudentGoalMapping(
+                activity_id=activities["Research Resource Person"].id,
+                student_goal_id=student_goals["Research Resource Person(External)"].id,
+            )
+        )
+
+    # Simple 1-to-1 mappings
+    simple_mappings = [
+        ("Coursera", "Coursera"),
+        ("Udemy", "Udemy"),
+        ("Workshop", "Workshop"),
+        ("Other College Events", "Other College Events"),
+        ("Organizing Events", "Organizing Events"),
+        ("Cultural", "Cultural"),
+        ("Sports/Music", "Sports/Music"),
+        ("NCC/NSS Activities", "NCC/NSS Activities"),
+        ("Volunteer Activities", "Volunteer Activities"),
+        ("Value Added Courses", "Value Added Courses"),
+        ("Research Working Prototype", "Research Working Prototype"),
+        ("Research-paper", "Research-paper"),
+        ("Best Paper Award", "Best Paper Award"),
+        ("Study Abroad", "Study Abroad"),
+        ("Seed Funding Project", "Seed Funding Project"),
+        ("Startup", "Startup"),
+        ("CGPA", "CGPA 8.5 And Above"),
+    ]
+
+    for activity_name, student_goal_name in simple_mappings:
+        if activity_name in activities and student_goal_name in student_goals:
+            mappings.append(
+                ActivityStudentGoalMapping(
+                    activity_id=activities[activity_name].id,
+                    student_goal_id=student_goals[student_goal_name].id,
+                )
+            )
+
+    for mapping in mappings:
+        db.add(mapping)
+    db.commit()
+    return mappings
 
 
 @register_seed("workflow_stage_mapping")
@@ -609,200 +907,35 @@ def seed_staff_student(db):
 
 @register_seed("user_activity_mapping")
 def seed_user_activities(db):
-    student1 = db.query(User).filter(User.email_id == "arun.kumar@college.edu").first()
-    student2 = (
-        db.query(User).filter(User.email_id == "priya.sharma@college.edu").first()
-    )
-    student3 = db.query(User).filter(User.email_id == "rahul.verma@college.edu").first()
-    student4 = db.query(User).filter(User.email_id == "sneha.reddy@college.edu").first()
-
-    nptel_pass = (
-        db.query(Activity).filter(Activity.activity_name == "NPTEL-Pass").first()
-    )
-    nptel_gold = (
-        db.query(Activity).filter(Activity.activity_name == "NPTEL-Elite+Gold").first()
-    )
-    hackathon_win = (
-        db.query(Activity)
-        .filter(Activity.activity_name == "Hackathon(Internal)-Win")
-        .first()
-    )
-    workshop = db.query(Activity).filter(Activity.activity_name == "Workshop").first()
-    cgpa_activity = (
-        db.query(Activity)
-        .filter(Activity.activity_name == "CGPA 8.5 And Above")
-        .first()
-    )
-    internship = (
-        db.query(Activity)
-        .filter(Activity.activity_name == "Internship-InOffice")
-        .first()
-    )
-
-    status_approved = db.query(Status).filter(Status.name == "Approved").first()
-    status_pending = db.query(Status).filter(Status.name == "Pending").first()
-
-    stage_approved = db.query(Stage).filter(Stage.name == "Approved").first()
-    stage_submission = db.query(Stage).filter(Stage.name == "Submission").first()
-
-    today = date.today()
-
-    user_activities = [
-        UserActivityMapping(
-            user_id=student1.id,
-            activity_id=nptel_pass.id,
-            status_id=status_approved.id,
-            current_stage_id=stage_approved.id,
-            tokens_earned=nptel_pass.token,
-            start_date=today - timedelta(days=30),
-            end_date=today - timedelta(days=15),
-        ),
-        UserActivityMapping(
-            user_id=student1.id,
-            activity_id=hackathon_win.id,
-            status_id=status_approved.id,
-            current_stage_id=stage_approved.id,
-            tokens_earned=hackathon_win.token,
-            start_date=today - timedelta(days=20),
-            end_date=today - timedelta(days=10),
-        ),
-        UserActivityMapping(
-            user_id=student2.id,
-            activity_id=nptel_gold.id,
-            status_id=status_approved.id,
-            current_stage_id=stage_approved.id,
-            tokens_earned=nptel_gold.token,
-            start_date=today - timedelta(days=45),
-            end_date=today - timedelta(days=20),
-        ),
-        UserActivityMapping(
-            user_id=student3.id,
-            activity_id=workshop.id,
-            status_id=status_pending.id,
-            current_stage_id=stage_submission.id,
-            tokens_earned=0,
-            start_date=today - timedelta(days=5),
-            end_date=None,
-        ),
-    ]
-
-    for ua in user_activities:
-        db.add(ua)
-    db.commit()
-    return user_activities
+    """Seed user activities - intentionally empty for manual entry"""
+    pass
 
 
 @register_seed("user_token_mapping")
 def seed_user_tokens(db):
-    user1 = db.query(User).filter(User.email_id == "arun.kumar@college.edu").first()
-    user2 = db.query(User).filter(User.email_id == "priya.sharma@college.edu").first()
-
-    ua1 = (
-        db.query(UserActivityMapping)
-        .filter(
-            UserActivityMapping.user_id == user1.id,
-            UserActivityMapping.tokens_earned > 0,
-        )
-        .first()
-    )
-    ua2 = (
-        db.query(UserActivityMapping)
-        .filter(
-            UserActivityMapping.user_id == user1.id, UserActivityMapping.id != ua1.id
-        )
-        .first()
-    )
-    ua3 = (
-        db.query(UserActivityMapping)
-        .filter(UserActivityMapping.user_id == user2.id)
-        .first()
-    )
-
-    tokens = [
-        UserTokenMapping(
-            user_id=user1.id,
-            token_amount=ua1.tokens_earned,
-            transaction_type="Earned",
-            description=f"Completed: {ua1.activity_id}",
-            reference_id=ua1.id,
-        ),
-        UserTokenMapping(
-            user_id=user1.id,
-            token_amount=ua2.tokens_earned,
-            transaction_type="Earned",
-            description=f"Completed: {ua2.activity_id}",
-            reference_id=ua2.id,
-        ),
-        UserTokenMapping(
-            user_id=user2.id,
-            token_amount=ua3.tokens_earned,
-            transaction_type="Earned",
-            description=f"Completed: {ua3.activity_id}",
-            reference_id=ua3.id,
-        ),
-    ]
-
-    for token in tokens:
-        db.add(token)
-    db.commit()
-    return tokens
+    """Seed user tokens - intentionally empty for manual entry"""
+    pass
 
 
 @register_seed("student_goal")
 def seed_student_goals(db):
-    student = db.query(User).filter(User.email_id == "arun.kumar@college.edu").first()
-    hackathon = (
-        db.query(Activity)
-        .filter(Activity.activity_name == "Hackathon(External)-Win")
-        .first()
-    )
-    internship = (
-        db.query(Activity)
-        .filter(Activity.activity_name == "Internship-InOffice")
-        .first()
-    )
-
-    goals = [
-        StudentGoal(
-            user_id=student.id,
-            activity_id=hackathon.id,
-            goal_name="Win External Hackathon",
-            target_tokens=6,
-            current_tokens=0,
-            deadline=date(2026, 12, 31),
-        ),
-        StudentGoal(
-            user_id=student.id,
-            activity_id=internship.id,
-            goal_name="Complete In-Office Internship",
-            target_tokens=6,
-            current_tokens=0,
-            deadline=date(2026, 6, 30),
-        ),
-    ]
-
-    for goal in goals:
-        db.add(goal)
-    db.commit()
-    return goals
+    """Seed student goals - intentionally empty for manual entry"""
+    pass
 
 
-def update_user_totals(db):
-    users = db.query(User).all()
-    for user in tqdm(users, desc="Updating user totals"):
-        total = (
-            db.query(UserTokenMapping).filter(UserTokenMapping.user_id == user.id).all()
-        )
-        total_tokens = sum(t.token_amount for t in total)
-        user.total_tokens = total_tokens
-    db.commit()
+def seed_user_activities(db):
+    """Seed user activities - intentionally empty for manual entry"""
+    pass
 
 
 def reset_database(db):
     print("Resetting database...")
-    for table in DELETE_ORDER:
-        db.query(table).delete()
-        db.commit()
+
+    from database.models.base import Base
+    from database.init_db import engine
+
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
     db.execute(
         text("""
@@ -819,6 +952,11 @@ def reset_database(db):
     db.commit()
 
     print("Database reset complete.\n")
+
+
+def update_user_totals(db):
+    """Update user total_tokens - intentionally empty since no tokens seeded"""
+    pass
 
 
 def main():

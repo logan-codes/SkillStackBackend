@@ -17,6 +17,7 @@ class StudentGoalCreate(BaseModel):
 
 
 class StudentGoalDelete(BaseModel):
+    goal_ids: Optional[List[int]] = None
     new_activities: Optional[List[PlannedActivity]] = None
 
 

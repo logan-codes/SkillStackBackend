@@ -14,6 +14,7 @@ class UserActivityStart(BaseModel):
 class UserActivityProof(BaseModel):
     proof: str
     proof_description: Optional[str] = None
+    student_goal_id: int  # Category selected when submitting proof
 
 
 class UserActivityUpdate(BaseModel):
@@ -28,6 +29,7 @@ class UserActivityResponse(BaseModel):
     id: int
     user_id: int
     activity_id: int
+    student_goal_id: Optional[int] = None
     custom_name: Optional[str]
     status_id: int
     current_stage_id: Optional[int]
@@ -38,6 +40,7 @@ class UserActivityResponse(BaseModel):
     end_date: Optional[date]
     ai_verification_result: Optional[str]
     tokens_earned: int
+    is_active: int
     created_date: Optional[datetime]
     updated_date: Optional[datetime]
 
