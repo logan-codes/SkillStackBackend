@@ -199,10 +199,11 @@ def seed_stages(db):
 @register_seed("status_master")
 def seed_status(db):
     statuses = [
-        Status(name="Pending"),
-        Status(name="In Progress"),
-        Status(name="Approved"),
-        Status(name="Rejected"),
+        Status(name="Pending"),  # 1
+        Status(name="In Progress"),  # 2
+        Status(name="Submitted"),  # 3 (NEW)
+        Status(name="Completed"),  # 4 (was Approved)
+        Status(name="Rejected"),  # 5 (was Rejected)
     ]
     for status in statuses:
         db.add(status)
@@ -266,6 +267,7 @@ def seed_users(db):
     )
 
     users = [
+        # CSE 3rd Year Section A
         User(
             role_id=role_student.id,
             gender_id=gender_male.id,
@@ -273,14 +275,13 @@ def seed_users(db):
             program_dept_id=program_cs.id,
             year=3,
             semester=6,
-            batch_start_year=2023,
-            batch_end_year=2027,
+            section="A",
             email_id="arun.kumar@college.edu",
             contact_no="9876543210",
             name="Arun Kumar",
             nationality="Indian",
             birthdate=date(2003, 5, 15),
-            total_tokens=0,
+            total_tokens=25,
         ),
         User(
             role_id=role_student.id,
@@ -289,53 +290,114 @@ def seed_users(db):
             program_dept_id=program_cs.id,
             year=3,
             semester=6,
-            batch_start_year=2023,
-            batch_end_year=2027,
+            section="A",
             email_id="priya.sharma@college.edu",
             contact_no="9876543211",
             name="Priya Sharma",
             nationality="Indian",
             birthdate=date(2004, 8, 22),
-            total_tokens=0,
+            total_tokens=30,
         ),
+        # CSE 3rd Year Section B
         User(
             role_id=role_student.id,
             gender_id=gender_male.id,
             register_no=1003,
-            program_dept_id=program_ece.id,
-            year=2,
-            semester=4,
-            batch_start_year=2024,
-            batch_end_year=2028,
+            program_dept_id=program_cs.id,
+            year=3,
+            semester=6,
+            section="B",
             email_id="rahul.verma@college.edu",
             contact_no="9876543212",
             name="Rahul Verma",
             nationality="Indian",
             birthdate=date(2004, 1, 10),
-            total_tokens=0,
+            total_tokens=20,
         ),
         User(
             role_id=role_student.id,
             gender_id=gender_female.id,
             register_no=1004,
             program_dept_id=program_cs.id,
-            year=4,
-            semester=8,
-            batch_start_year=2022,
-            batch_end_year=2026,
+            year=3,
+            semester=6,
+            section="B",
             email_id="sneha.reddy@college.edu",
             contact_no="9876543213",
             name="Sneha Reddy",
             nationality="Indian",
-            birthdate=date(2002, 11, 3),
-            total_tokens=0,
+            birthdate=date(2004, 3, 25),
+            total_tokens=18,
         ),
+        # CSE 2nd Year Section A
+        User(
+            role_id=role_student.id,
+            gender_id=gender_male.id,
+            register_no=1005,
+            program_dept_id=program_cs.id,
+            year=2,
+            semester=4,
+            section="A",
+            email_id="amit.patel@college.edu",
+            contact_no="9876543214",
+            name="Amit Patel",
+            nationality="Indian",
+            birthdate=date(2005, 6, 12),
+            total_tokens=15,
+        ),
+        User(
+            role_id=role_student.id,
+            gender_id=gender_female.id,
+            register_no=1006,
+            program_dept_id=program_cs.id,
+            year=2,
+            semester=4,
+            section="A",
+            email_id="divya.singh@college.edu",
+            contact_no="9876543215",
+            name="Divya Singh",
+            nationality="Indian",
+            birthdate=date(2005, 9, 8),
+            total_tokens=22,
+        ),
+        # ECE 2nd Year Section A
+        User(
+            role_id=role_student.id,
+            gender_id=gender_male.id,
+            register_no=2001,
+            program_dept_id=program_ece.id,
+            year=2,
+            semester=4,
+            section="A",
+            email_id="karthik.nair@college.edu",
+            contact_no="9876543216",
+            name="Karthik Nair",
+            nationality="Indian",
+            birthdate=date(2005, 2, 18),
+            total_tokens=12,
+        ),
+        User(
+            role_id=role_student.id,
+            gender_id=gender_female.id,
+            register_no=2002,
+            program_dept_id=program_ece.id,
+            year=2,
+            semester=4,
+            section="A",
+            email_id="neha.iyer@college.edu",
+            contact_no="9876543217",
+            name="Neha Iyer",
+            nationality="Indian",
+            birthdate=date(2005, 7, 30),
+            total_tokens=28,
+        ),
+        # Staff - Class Coordinators
         User(
             role_id=role_staff.id,
             gender_id=gender_male.id,
             staff_id="FAC001",
             email_id="dr.ravi.krishna@college.edu",
-            contact_no="9876543214",
+            contact_no="9876543218",
             name="Dr. Ravi Krishna",
             nationality="Indian",
             total_tokens=0,
@@ -345,7 +407,7 @@ def seed_users(db):
             gender_id=gender_female.id,
             staff_id="FAC002",
             email_id="prof.meera.sen@college.edu",
-            contact_no="9876543215",
+            contact_no="9876543219",
             name="Prof. Meera Sen",
             nationality="Indian",
             total_tokens=0,
@@ -378,99 +440,122 @@ def seed_activities(db):
     )
     workflow = db.query(Workflow).filter(Workflow.name == "Standard").first()
 
-    # Generic activities for workflow
+    # Generic activities for workflow with activity limits
     activities = [
         ActivityMaster(
             activity_name="NPTEL",
             activity_type_id=type_technical.id,
+            activity_limit=5,
         ),
         ActivityMaster(
             activity_name="Coursera",
             activity_type_id=type_technical.id,
+            activity_limit=5,
         ),
         ActivityMaster(
             activity_name="Udemy",
             activity_type_id=type_technical.id,
+            activity_limit=5,
         ),
         ActivityMaster(
             activity_name="Workshop",
             activity_type_id=type_technical.id,
+            activity_limit=3,
         ),
         ActivityMaster(
             activity_name="Hackathon",
             activity_type_id=type_technical.id,
+            activity_limit=3,
         ),
         ActivityMaster(
             activity_name="Other College Events",
             activity_type_id=type_technical.id,
+            activity_limit=3,
         ),
         ActivityMaster(
             activity_name="Organizing Events",
             activity_type_id=type_cultural.id,
+            activity_limit=3,
         ),
         ActivityMaster(
             activity_name="Cultural",
             activity_type_id=type_cultural.id,
+            activity_limit=2,
         ),
         ActivityMaster(
             activity_name="Sports/Music",
             activity_type_id=type_sports.id,
+            activity_limit=2,
         ),
         ActivityMaster(
             activity_name="NCC/NSS Activities",
             activity_type_id=type_sports.id,
+            activity_limit=2,
         ),
         ActivityMaster(
             activity_name="Volunteer Activities",
             activity_type_id=type_cultural.id,
+            activity_limit=2,
         ),
         ActivityMaster(
             activity_name="Value Added Courses",
             activity_type_id=type_technical.id,
+            activity_limit=3,
         ),
         ActivityMaster(
             activity_name="Internship",
             activity_type_id=type_technical.id,
+            activity_limit=2,
         ),
         ActivityMaster(
             activity_name="Certification",
             activity_type_id=type_technical.id,
+            activity_limit=3,
         ),
         ActivityMaster(
             activity_name="Research Working Prototype",
             activity_type_id=type_technical.id,
+            activity_limit=2,
         ),
         ActivityMaster(
             activity_name="Coding-Contest",
             activity_type_id=type_technical.id,
+            activity_limit=5,
         ),
         ActivityMaster(
             activity_name="Research-paper",
             activity_type_id=type_technical.id,
+            activity_limit=2,
         ),
         ActivityMaster(
             activity_name="Best Paper Award",
             activity_type_id=type_technical.id,
+            activity_limit=2,
         ),
         ActivityMaster(
             activity_name="Research Resource Person",
             activity_type_id=type_technical.id,
+            activity_limit=2,
         ),
         ActivityMaster(
             activity_name="Study Abroad",
             activity_type_id=type_cultural.id,
+            activity_limit=1,
         ),
         ActivityMaster(
             activity_name="Seed Funding Project",
             activity_type_id=type_technical.id,
+            activity_limit=1,
         ),
         ActivityMaster(
             activity_name="Startup",
             activity_type_id=type_technical.id,
+            activity_limit=1,
         ),
         ActivityMaster(
             activity_name="CGPA",
             activity_type_id=type_technical.id,
+            activity_limit=1,
         ),
     ]
 
@@ -500,7 +585,7 @@ def seed_student_goal_master(db):
     )
     workflow = db.query(Workflow).filter(Workflow.name == "Standard").first()
 
-    # Student goal activities (specific outcomes)
+    # Student goal activities (specific outcomes - tokens only)
     student_goals = [
         StudentGoalMaster(
             activity_name="NPTEL-Pass",
@@ -892,17 +977,31 @@ def seed_workflow_stages(db):
 
 @register_seed("staff_student_mapping")
 def seed_staff_student(db):
-    staff = db.query(User).filter(User.staff_id == "FAC001").first()
-    student = db.query(User).filter(User.register_no == 1001).first()
+    staff1 = db.query(User).filter(User.staff_id == "FAC001").first()
+    staff2 = db.query(User).filter(User.staff_id == "FAC002").first()
 
-    mapping = StaffStudentMapping(
-        staff_id=staff.id,
-        student_id=student.id,
-        mapping_type="Mentor",
+    mappings = []
+
+    # Teacher 1 (FAC001 - Dr. Ravi Krishna) - ClassCoordinator for Section A
+    mapping1 = StaffStudentMapping(
+        staff_id=staff1.id,
+        section="A",
+        mapping_type="ClassCoordinator",
     )
-    db.add(mapping)
+    mappings.append(mapping1)
+
+    # Teacher 2 (FAC002 - Prof. Meera Sen) - ClassCoordinator for Section B
+    mapping2 = StaffStudentMapping(
+        staff_id=staff2.id,
+        section="B",
+        mapping_type="ClassCoordinator",
+    )
+    mappings.append(mapping2)
+
+    for m in mappings:
+        db.add(m)
     db.commit()
-    return mapping
+    return mappings
 
 
 @register_seed("user_activity_mapping")

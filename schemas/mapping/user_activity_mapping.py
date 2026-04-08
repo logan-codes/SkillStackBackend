@@ -14,7 +14,7 @@ class UserActivityStart(BaseModel):
 class UserActivityProof(BaseModel):
     proof: str
     proof_description: Optional[str] = None
-    student_goal_id: int  # Category selected when submitting proof
+    student_goal_id: int
 
 
 class UserActivityUpdate(BaseModel):
@@ -23,6 +23,11 @@ class UserActivityUpdate(BaseModel):
     end_date: Optional[date] = None
     permission_proof: Optional[str] = None
     proof_description: Optional[str] = None
+
+
+class TeacherReviewRequest(BaseModel):
+    action: str
+    reason: Optional[str] = None
 
 
 class UserActivityResponse(BaseModel):
@@ -43,6 +48,11 @@ class UserActivityResponse(BaseModel):
     is_active: int
     created_date: Optional[datetime]
     updated_date: Optional[datetime]
+    rejection_reason: Optional[str] = None
+    submission_count: int = 0
+    is_locked: int = 0
+    is_completed: int = 0
+    is_deleted: int = 0
 
     class Config:
         from_attributes = True

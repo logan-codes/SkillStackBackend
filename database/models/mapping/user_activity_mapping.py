@@ -35,3 +35,10 @@ class UserActivityMapping(Base):
     is_active = Column(SmallInteger, default=1)
     created_date = Column(DateTime, default=datetime.utcnow)
     updated_date = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # New columns for workflow
+    rejection_reason = Column(String(500), nullable=True)
+    submission_count = Column(SmallInteger, default=0)
+    is_locked = Column(SmallInteger, default=0)
+    is_completed = Column(SmallInteger, default=0)
+    is_deleted = Column(SmallInteger, default=0)

@@ -16,6 +16,7 @@ class User(Base):
     cgpa = Column(Numeric(3, 2), nullable=True)
     batch_start_year = Column(SmallInteger, nullable=True)
     batch_end_year = Column(SmallInteger, nullable=True)
+    section = Column(String(5), nullable=True)
     email_id = Column(String(100), unique=True, index=True, nullable=False)
     contact_no = Column(String(15), nullable=True)
     name = Column(String(100), nullable=False)

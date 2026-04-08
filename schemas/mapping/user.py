@@ -43,3 +43,23 @@ class StudentProfileUpdate(BaseModel):
     leetcode_url: Optional[str] = None
     codeforces_url: Optional[str] = None
     hackerrank_url: Optional[str] = None
+
+
+class LeaderboardEntry(BaseModel):
+    rank: int
+    student_id: int
+    name: str
+    register_no: Optional[int] = None
+    section: Optional[str] = None
+    department: Optional[str] = None
+    year: Optional[str] = None
+    total_tokens: int
+
+    class Config:
+        from_attributes = True
+
+
+class LeaderboardResponse(BaseModel):
+    leaderboard: list[LeaderboardEntry]
+    total_count: int
+    user_rank: Optional[int] = None

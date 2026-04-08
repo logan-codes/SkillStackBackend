@@ -12,6 +12,9 @@ class ActivityMaster(Base):
     activity_type_id = Column(
         Integer, ForeignKey("activity_type_master.id"), nullable=True
     )
+    activity_limit = Column(
+        Integer, nullable=True
+    )  # Max activities a student can complete
     is_active = Column(SmallInteger, default=1)
 
     student_goal_mappings = relationship(

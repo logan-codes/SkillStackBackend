@@ -9,7 +9,6 @@ class StudentGoalMaster(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     activity_name = Column(String(200), nullable=False)
-    activity_limit = Column(Integer, nullable=True)
     activity_type_id = Column(
         Integer, ForeignKey("activity_type_master.id"), nullable=True
     )
