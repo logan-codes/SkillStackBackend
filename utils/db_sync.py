@@ -1,3 +1,7 @@
+## Usage
+# python db_sync.py pull - to pull from supabase to local
+# python db_sync.py push - to push from local to supabase
+
 import os
 import subprocess
 import argparse
