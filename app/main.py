@@ -10,22 +10,16 @@ from database.init_db import engine
 from database.models.base import Base
 
 # Import all models to register them with Base.metadata
-from database.models.mapping import users, student_goal, user_activity_mapping
-from database.models.mapping import activity_studentgoal_mapping, user_token_mapping
-from database.models.master import (
-    activity_master,
-    student_goal_master,
-    activity_type_master,
-    application_config,
-    event_master,
-    malpractice_master,
-    program_dept_master,
-    stage,
-    workflow,
-    status,
-    roles,
-    gender,
-)
+from database.models.mapping.users import User
+from database.models.mapping.student_goal import StudentGoal
+from database.models.mapping.user_activity_mapping import UserActivityMapping
+from database.models.mapping.user_token_mapping import UserTokenMapping
+from database.models.mapping.staff_student_mapping import StaffStudentMapping
+from database.models.mapping.workflow_stage_mapping import WorkflowStageMapping
+
+# Note: The following models reference tables that don't exist in PostgreSQL
+# from database.models.mapping.activity_studentgoal_mapping import ActivityStudentGoalMapping
+# from database.models.master.student_goal_master import StudentGoalMaster
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -55,7 +49,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create database tables on startup
+# Create database tables on startup (only creates if not exist)
 Base.metadata.create_all(bind=engine)
 
 # Register API routes

@@ -1,21 +1,25 @@
-# Quick script to view all database tables
+# Quick script to view all database tables (PostgreSQL)
+import sys
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from database.init_db import SessionLocal
 from database.models.mapping.users import User
 from database.models.master.activity_master import ActivityMaster
-from database.models.master.student_goal_master import StudentGoalMaster
 from database.models.master.activity_type_master import ActivityTypeMaster
 from database.models.master.malpractice_master import MalpracticeMaster
 from database.models.master.program_dept_master import ProgramDeptMaster
-from database.models.mapping.activity_studentgoal_mapping import (
-    ActivityStudentGoalMapping,
-)
+from database.models.master.status import Status
+from database.models.master.roles import Role
+from database.models.master.gender import Gender
+from database.models.master.workflow import Workflow
+from database.models.master.stage import Stage
+from database.models.master.event_master import EventMaster
 from database.models.mapping.staff_student_mapping import StaffStudentMapping
 from database.models.mapping.user_activity_mapping import UserActivityMapping
 from database.models.mapping.user_token_mapping import UserTokenMapping
 from database.models.mapping.student_goal import StudentGoal
-from database.models.mapping.student_malpractice import StudentMalpractice
-from database.models.master.status import Status
-from database.models.master.roles import Role
 
 db = SessionLocal()
 
@@ -24,7 +28,7 @@ db = SessionLocal()
 # ============================================================================
 
 print("\n" + "=" * 80)
-print("=== ROLES MASTER ===")
+print("=== ROLES ===")
 print("=" * 80)
 roles = db.query(Role).all()
 print(f"Total: {len(roles)} records\n")
@@ -32,7 +36,15 @@ for r in roles:
     print(f"ID: {r.id} | Role: {r.role_name}")
 
 print("\n" + "=" * 80)
-print("=== PROGRAM/DEPARTMENT MASTER ===")
+print("=== GENDER ===")
+print("=" * 80)
+genders = db.query(Gender).all()
+print(f"Total: {len(genders)} records\n")
+for g in genders:
+    print(f"ID: {g.id} | Name: {g.name}")
+
+print("\n" + "=" * 80)
+print("=== PROGRAM/DEPARTMENT ===")
 print("=" * 80)
 departments = db.query(ProgramDeptMaster).all()
 print(f"Total: {len(departments)} records\n")
@@ -40,7 +52,7 @@ for d in departments:
     print(f"ID: {d.id} | Program: {d.program} | Branch: {d.branch}")
 
 print("\n" + "=" * 80)
-print("=== ACTIVITY TYPE MASTER ===")
+print("=== ACTIVITY TYPE ===")
 print("=" * 80)
 types = db.query(ActivityTypeMaster).all()
 print(f"Total: {len(types)} records\n")
@@ -48,7 +60,7 @@ for t in types:
     print(f"ID: {t.id} | Type: {t.type_name}")
 
 print("\n" + "=" * 80)
-print("=== STATUS MASTER ===")
+print("=== STATUS ===")
 print("=" * 80)
 statuses = db.query(Status).all()
 print(f"Total: {len(statuses)} records\n")
@@ -56,7 +68,31 @@ for s in statuses:
     print(f"ID: {s.id} | Status: {s.name}")
 
 print("\n" + "=" * 80)
-print("=== MALPRACTICE MASTER ===")
+print("=== WORKFLOW ===")
+print("=" * 80)
+workflows = db.query(Workflow).all()
+print(f"Total: {len(workflows)} records\n")
+for w in workflows:
+    print(f"ID: {w.id} | Name: {w.name}")
+
+print("\n" + "=" * 80)
+print("=== STAGE ===")
+print("=" * 80)
+stages = db.query(Stage).all()
+print(f"Total: {len(stages)} records\n")
+for s in stages:
+    print(f"ID: {s.id} | Stage: {s.name}")
+
+print("\n" + "=" * 80)
+print("=== EVENT MASTER ===")
+print("=" * 80)
+events = db.query(EventMaster).all()
+print(f"Total: {len(events)} records\n")
+for e in events:
+    print(f"ID: {e.id} | Name: {e.name}")
+
+print("\n" + "=" * 80)
+print("=== MALPRACTICE ===")
 print("=" * 80)
 malpractice = db.query(MalpracticeMaster).all()
 print(f"Total: {len(malpractice)} records\n")
@@ -68,7 +104,7 @@ for m in malpractice:
 # ============================================================================
 
 print("\n" + "=" * 80)
-print("=== USERS (Students & Staff) ===")
+print("=== USERS ===")
 print("=" * 80)
 users = db.query(User).all()
 print(f"Total: {len(users)} records\n")
@@ -79,17 +115,18 @@ for u in users:
         .filter(ProgramDeptMaster.id == u.program_dept_id)
         .first()
     )
+    gender = db.query(Gender).filter(Gender.id == u.gender_id).first()
     role_name = role.role_name if role else u.role_id
     dept_name = dept.branch if dept else "N/A"
     print(
         f"ID: {u.id} | {u.name} | {role_name} | {u.email_id} | "
         f"Register No: {u.register_no or 'N/A'} | Staff ID: {u.staff_id or 'N/A'} | "
-        f"Year: {u.year or 'N/A'} | Section: {u.section or 'N/A'} | Dept: {dept_name} | "
+        f"Year: {u.year or 'N/A'} | Semester: {u.semester or 'N/A'} | Dept: {dept_name} | "
         f"Tokens: {u.total_tokens} | Active: {u.is_active}"
     )
 
 print("\n" + "=" * 80)
-print("=== STAFF STUDENT MAPPING (ClassCoordinator) ===")
+print("=== STAFF STUDENT MAPPING ===")
 print("=" * 80)
 mappings = db.query(StaffStudentMapping).all()
 print(f"Total: {len(mappings)} records\n")
@@ -97,63 +134,23 @@ for m in mappings:
     staff = db.query(User).filter(User.id == m.staff_id).first()
     staff_name = staff.name if staff else m.staff_id
     print(
-        f"ID: {m.id} | Teacher: {staff_name} | Section: {m.section or 'N/A'} | "
-        f"Student ID: {m.student_id or 'N/A'} | Type: {m.mapping_type}"
+        f"ID: {m.id} | Staff: {staff_name} | Student ID: {m.student_id} | "
+        f"Mapping Type: {m.mapping_type}"
     )
 
 print("\n" + "=" * 80)
-print("=== ACTIVITY MASTER (Generic Activities with Limits) ===")
+print("=== ACTIVITY (Master Activities) ===")
 print("=" * 80)
 activities = db.query(ActivityMaster).all()
 print(f"Total: {len(activities)} records\n")
 for a in activities:
-    type_name = (
-        db.query(ActivityTypeMaster)
-        .filter(ActivityTypeMaster.id == a.activity_type_id)
-        .first()
-    )
     print(
-        f"ID: {a.id} | Name: {a.activity_name} | Type: {type_name.type_name if type_name else a.activity_type_id} | "
-        f"Limit: {a.activity_limit}"
+        f"ID: {a.id} | Name: {a.activity_name} | Token: {a.token} | "
+        f"Workflow ID: {a.workflow_id} | Type: {a.type} | Active: {a.is_active}"
     )
 
 print("\n" + "=" * 80)
-print("=== STUDENT GOAL MASTER (Token Values) ===")
-print("=" * 80)
-sg_master = db.query(StudentGoalMaster).all()
-print(f"Total: {len(sg_master)} records\n")
-for s in sg_master:
-    type_name = (
-        db.query(ActivityTypeMaster)
-        .filter(ActivityTypeMaster.id == s.activity_type_id)
-        .first()
-    )
-    print(
-        f"ID: {s.id} | Name: {s.activity_name} | Type: {type_name.type_name if type_name else s.activity_type_id} | "
-        f"Tokens: {s.token}"
-    )
-
-print("\n" + "=" * 80)
-print("=== ACTIVITY STUDENTGOAL MAPPING ===")
-print("=" * 80)
-mappings = db.query(ActivityStudentGoalMapping).all()
-print(f"Total: {len(mappings)} records\n")
-for m in mappings:
-    activity = (
-        db.query(ActivityMaster).filter(ActivityMaster.id == m.activity_id).first()
-    )
-    goal = (
-        db.query(StudentGoalMaster)
-        .filter(StudentGoalMaster.id == m.student_goal_id)
-        .first()
-    )
-    print(
-        f"ID: {m.id} | Activity: {activity.activity_name if activity else m.activity_id} | "
-        f"Goal: {goal.activity_name if goal else m.student_goal_id}"
-    )
-
-print("\n" + "=" * 80)
-print("=== USER ACTIVITIES (Workflow) ===")
+print("=== USER ACTIVITY MAPPING (User Progress) ===")
 print("=" * 80)
 user_activities = db.query(UserActivityMapping).all()
 print(f"Total: {len(user_activities)} records\n")
@@ -163,21 +160,18 @@ if user_activities:
         activity = (
             db.query(ActivityMaster).filter(ActivityMaster.id == ua.activity_id).first()
         )
-        status = db.query(Status).filter(Status.id == ua.status_id).first()
+        status = db.query(Status).filter(Status.id == ua.status).first()
         print(
             f"ID: {ua.id} | User: {user.name if user else ua.user_id} | "
             f"Activity: {activity.activity_name if activity else ua.activity_id} | "
-            f"Custom: {ua.custom_name} | Status: {status.name if status else ua.status_id} | "
-            f"Tokens: {ua.tokens_earned} | Submitted: {ua.submission_count}x | "
-            f"Locked: {ua.is_locked} | Completed: {ua.is_completed} | Deleted: {ua.is_deleted}"
+            f"Title: {ua.title} | Status: {status.name if status else ua.status} | "
+            f"Stage ID: {ua.stage_id} | Event Type: {ua.event_type}"
         )
-        if ua.rejection_reason:
-            print(f"       ↳ Rejection: {ua.rejection_reason}")
 else:
     print("No records")
 
 print("\n" + "=" * 80)
-print("=== USER TOKEN MAPPING (Transaction History) ===")
+print("=== USER TOKEN MAPPING (Transactions) ===")
 print("=" * 80)
 token_mappings = db.query(UserTokenMapping).all()
 print(f"Total: {len(token_mappings)} records\n")
@@ -193,43 +187,21 @@ else:
     print("No records")
 
 print("\n" + "=" * 80)
-print("=== STUDENT GOALS (User Goals) ===")
+print("=== STUDENT GOAL ===")
 print("=" * 80)
 goals = db.query(StudentGoal).all()
 print(f"Total: {len(goals)} records\n")
 if goals:
     for g in goals:
         user = db.query(User).filter(User.id == g.user_id).first()
+        activity = (
+            db.query(ActivityMaster).filter(ActivityMaster.id == g.activity_id).first()
+        )
         print(
             f"ID: {g.id} | User: {user.name if user else g.user_id} | "
-            f"Goal: {g.goal_name} | Target: {g.target_tokens} | "
-            f"Current: {g.current_tokens} | Deadline: {g.deadline} | Active: {g.is_active}"
+            f"Activity: {activity.activity_name if activity else g.activity_id} | "
+            f"Target Month: {g.target_month} | Active: {g.is_active}"
         )
-else:
-    print("No records")
-
-print("\n" + "=" * 80)
-print("=== STUDENT MALPRACTICE ===")
-print("=" * 80)
-malpractice_records = db.query(StudentMalpractice).all()
-print(f"Total: {len(malpractice_records)} records\n")
-if malpractice_records:
-    for m in malpractice_records:
-        student = db.query(User).filter(User.id == m.student_id).first()
-        teacher = db.query(User).filter(User.id == m.teacher_id).first()
-        malpractice = (
-            db.query(MalpracticeMaster)
-            .filter(MalpracticeMaster.id == m.malpractice_id)
-            .first()
-        )
-        print(
-            f"ID: {m.id} | Student: {student.name if student else m.student_id} | "
-            f"Malpractice: {malpractice.name if malpractice else m.malpractice_id} | "
-            f"Tokens: -{m.token_deducted} | Teacher: {teacher.name if teacher else m.teacher_id} | "
-            f"Reversed: {m.is_reversed}"
-        )
-        if m.description:
-            print(f"       ↳ Description: {m.description}")
 else:
     print("No records")
 

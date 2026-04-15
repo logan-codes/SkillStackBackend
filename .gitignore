@@ -24,3 +24,5 @@ logs/
 coverage/
 dist/
 build/
+
+.history/

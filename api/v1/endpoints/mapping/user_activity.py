@@ -1,5 +1,5 @@
-# User activity endpoints
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+# User activity endpoints - Simplified for PostgreSQL
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
@@ -9,293 +9,255 @@ from database.crud.mapping.user_activity_mapping import (
     start_activity,
     submit_proof,
     delete_user_activity,
-    undelete_user_activity,
     get_user_activities,
     get_user_activity_by_id,
-    get_available_categories,
+    get_available_activities,
     teacher_review,
-    can_resubmit,
-    get_teacher_student_activities,
+    validate_teacher_access,
     get_teacher_students,
-    get_student_profile,
-    get_student_activities_by_status,
-    get_student_goals,
+    get_teacher_student_activities,
     apply_malpractice,
-    reverse_selected_malpractice,
+    reverse_malpractice,
     get_student_malpractice,
 )
-from schemas.mapping.user_activity_mapping import (
-    UserActivityProof,
-    UserActivityUpdate,
-    UserActivityResponse,
-    TeacherReviewRequest,
-)
-from schemas.mapping.student_malpractice import MalpracticeApply
+from core.auth import get_current_user
 from database.models.master.malpractice_master import MalpracticeMaster
-from database.models.mapping.users import User
-from core.auth import get_current_user, require_staff
-from pathlib import Path
 
 router = APIRouter()
 
-ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
-
-
-def validate_file(file: UploadFile):
-    ext = Path(file.filename).suffix.lower()
-    if ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(400, "Only PDF, JPG, JPEG, PNG allowed")
-    if file.size > MAX_FILE_SIZE:
-        raise HTTPException(400, "File too large (max 10MB)")
-    return ext
-
 
 class UserActivityStart(BaseModel):
-    custom_name: str
-    student_goal_id: int
-    permission_proof: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    title: str
+    activity_details: Optional[str] = None
+    event_type: Optional[int] = None
+    activity_start_date: Optional[date] = None
+    activity_end_date: Optional[date] = None
 
 
-@router.get("/activities", response_model=List[dict])
-def get_activities_for_workflow(
+class UserActivityUpdate(BaseModel):
+    title: Optional[str] = None
+    activity_details: Optional[str] = None
+    activity_start_date: Optional[date] = None
+    activity_end_date: Optional[date] = None
+
+
+class TeacherReviewRequest(BaseModel):
+    action: str  # "approve" or "reject"
+    reason: Optional[str] = None
+
+
+class MalpracticeApply(BaseModel):
+    student_id: int
+    malpractice_id: int
+
+
+@router.get("/activities")
+def get_all_activities(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get all generic activities available for workflow"""
-    from database.models.master.activity_master import ActivityMaster
-
-    activities = db.query(ActivityMaster).filter(ActivityMaster.is_active == 1).all()
-    return [{"id": a.id, "activity_name": a.activity_name} for a in activities]
+    """Get all available activities from activity master table"""
+    return get_available_activities(db)
 
 
-@router.get("/{activity_id}/categories", response_model=List[dict])
-def get_activity_categories(
-    activity_id: int,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Get available categories (student goals) for an activity"""
-    categories = get_available_categories(db, activity_id)
-    if not categories:
-        raise HTTPException(
-            status_code=404, detail="No categories found for this activity"
-        )
-    return categories
-
-
-@router.post("/{activity_id}/start", response_model=UserActivityResponse)
+@router.post("/{activity_id}/start")
 def start_my_activity(
     activity_id: int,
     request: UserActivityStart,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Start a new activity"""
     result = start_activity(
         db=db,
         user_id=current_user.id,
         activity_id=activity_id,
-        custom_name=request.custom_name,
-        student_goal_id=request.student_goal_id,
-        permission_proof=request.permission_proof,
-        start_date=request.start_date,
-        end_date=request.end_date,
+        title=request.title,
+        activity_details=request.activity_details,
+        event_type=request.event_type,
+        activity_start_date=request.activity_start_date,
+        activity_end_date=request.activity_end_date,
     )
-    if result is None:
-        raise HTTPException(status_code=404, detail="Activity not found")
-    if result == "activity_not_found":
-        raise HTTPException(status_code=404, detail="Activity not found")
-    if result == "already_started":
-        raise HTTPException(status_code=400, detail="Same activity already in progress")
-    if result == "Same activity already in progress":
-        raise HTTPException(status_code=400, detail="Same activity already in progress")
-    if result == "Activity limit reached":
-        raise HTTPException(status_code=400, detail="Activity limit reached")
-    return result
+
+    if isinstance(result, str):
+        raise HTTPException(status_code=400, detail=result)
+
+    return {
+        "id": result.id,
+        "activity_id": result.activity_id,
+        "title": result.title,
+        "status": result.status,
+    }
 
 
-@router.put("/{user_activity_id}", response_model=UserActivityResponse)
+@router.put("/{activity_id}")
 def update_my_activity(
-    user_activity_id: int,
+    activity_id: int,
     request: UserActivityUpdate,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    user_activity = get_user_activity_by_id(db, user_activity_id, current_user.id)
+    """Update an activity (only while status is Yet To Start)"""
+    user_activity = get_user_activity_by_id(db, activity_id, current_user.id)
+
     if not user_activity:
         raise HTTPException(status_code=404, detail="Activity not found")
 
-    # Date validation: start_date cannot be after end_date
-    new_start = request.start_date or user_activity.start_date
-    new_end = request.end_date or user_activity.end_date
-    if new_start and new_end and new_start > new_end:
+    if user_activity.status != 1:  # Not Yet To Start
         raise HTTPException(
-            status_code=400, detail="start_date cannot be after end_date"
+            status_code=400, detail="Cannot edit - activity already in progress"
         )
 
-    # PENDING: can edit custom_name, start_date, end_date, permission_proof, proof_description
-    if user_activity.status_id == 1:
-        if request.custom_name is not None:
-            user_activity.custom_name = request.custom_name
-        if request.start_date is not None:
-            user_activity.start_date = request.start_date
-        if request.end_date is not None:
-            user_activity.end_date = request.end_date
-        if request.permission_proof is not None:
-            user_activity.permission_proof = request.permission_proof
-        if request.proof_description is not None:
-            user_activity.proof_description = request.proof_description
-
-    # ONGOING: can edit start_date, end_date only
-    elif user_activity.status_id == 2:
-        if request.start_date is not None:
-            user_activity.start_date = request.start_date
-        if request.end_date is not None:
-            user_activity.end_date = request.end_date
-
-    # SUBMITTED/COMPLETED: cannot edit
-    else:
-        raise HTTPException(
-            status_code=400, detail="Cannot edit activity after submission"
-        )
+    if request.title:
+        user_activity.title = request.title
+    if request.activity_details is not None:
+        user_activity.activity_details = request.activity_details
+    if request.activity_start_date:
+        user_activity.activity_start_date = request.activity_start_date
+    if request.activity_end_date:
+        user_activity.activity_end_date = request.activity_end_date
 
     db.commit()
     db.refresh(user_activity)
-    return user_activity
+
+    return {
+        "id": user_activity.id,
+        "title": user_activity.title,
+        "status": user_activity.status,
+    }
 
 
-@router.put("/{user_activity_id}/proof", response_model=UserActivityResponse)
-def submit_my_proof(
-    user_activity_id: int,
-    request: UserActivityProof,
+@router.post("/{activity_id}/submit")
+def submit_activity_proof(
+    activity_id: int,
+    request: UserActivityUpdate,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Submit proof for an activity (move from In Progress to Submitted)"""
     result = submit_proof(
         db=db,
-        user_activity_id=user_activity_id,
+        activity_id=activity_id,
         user_id=current_user.id,
-        proof=request.proof,
-        proof_description=request.proof_description,
-        student_goal_id=request.student_goal_id,
+        activity_details=request.activity_details,
     )
-    if result is None:
-        raise HTTPException(status_code=404, detail="Activity not found")
+
     if result == "not_found":
         raise HTTPException(status_code=404, detail="Activity not found")
     if result == "invalid_status":
-        raise HTTPException(
-            status_code=400, detail="Can only submit proof when status is ONGOING"
-        )
-    if result == "student_goal_required":
-        raise HTTPException(
-            status_code=400, detail="Please select a category (student_goal_id)"
-        )
-    if result == "invalid_student_goal":
-        raise HTTPException(status_code=400, detail="Invalid category selected")
-    if result == "invalid_mapping":
-        raise HTTPException(
-            status_code=400, detail="Selected category does not match this activity"
-        )
-    if result == "Activity is locked. Contact teacher.":
-        raise HTTPException(
-            status_code=400, detail="Activity is locked. Contact teacher."
-        )
-    if result == "Submission limit exceeded. Activity locked.":
-        raise HTTPException(
-            status_code=400, detail="Submission limit exceeded. Activity locked."
-        )
-    return result
+        raise HTTPException(status_code=400, detail="Can only submit when in progress")
+
+    return {"status": "submitted", "activity_id": activity_id}
 
 
-@router.post("/upload-permission-proof/{user_activity_id}")
-async def upload_permission_proof(
-    user_activity_id: int,
-    file: UploadFile = File(...),
+@router.delete("/{activity_id}")
+def delete_my_activity(
+    activity_id: int,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from database.crud.mapping.user_activity_mapping import get_user_activity_by_id
+    """Delete/withdraw an activity"""
+    result = delete_user_activity(db, activity_id, current_user.id)
 
-    validate_file(file)
-
-    activity = get_user_activity_by_id(db, user_activity_id, current_user.id)
-    if not activity:
+    if result == "not_found":
         raise HTTPException(status_code=404, detail="Activity not found")
-
-    # Only allow upload at Pending status (1)
-    if activity.status_id != 1:
+    if result == "cannot_delete":
         raise HTTPException(
-            status_code=400, detail="Can only upload permission proof at Pending status"
+            status_code=400, detail="Cannot delete - activity already in progress"
         )
 
-    upload_dir = Path(f"uploads/permission_proof/{current_user.id}")
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
-    file_path = str(upload_dir / f"{user_activity_id}_{file.filename}")
-
-    content = await file.read()
-    with open(file_path, "wb") as f:
-        f.write(content)
-
-    activity.permission_proof = file_path
-    db.commit()
-    db.refresh(activity)
-
-    return {"message": "Permission proof uploaded", "file_path": file_path}
+    return {"status": "deleted"}
 
 
-@router.post("/upload-proof/{user_activity_id}")
-async def upload_proof(
-    user_activity_id: int,
-    file: UploadFile = File(...),
+@router.get("/")
+def get_my_activities(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 10,
+):
+    """Get all my activities"""
+    activities = get_user_activities(db, current_user.id, skip, limit)
+    return [
+        {
+            "id": a.id,
+            "activity_id": a.activity_id,
+            "title": a.title,
+            "status": a.status,
+            "activity_start_date": a.activity_start_date,
+            "activity_end_date": a.activity_end_date,
+        }
+        for a in activities
+    ]
+
+
+@router.get("/{activity_id}")
+def get_my_activity(
+    activity_id: int,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from database.crud.mapping.user_activity_mapping import get_user_activity_by_id
-
-    validate_file(file)
-
-    activity = get_user_activity_by_id(db, user_activity_id, current_user.id)
+    """Get a specific activity"""
+    activity = get_user_activity_by_id(db, activity_id, current_user.id)
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
 
-    if activity.status_id != 2:
-        raise HTTPException(
-            status_code=400, detail="Can only submit at In Progress status"
-        )
-
-    can_submit, msg = can_resubmit(db, user_activity_id)
-    if not can_submit:
-        raise HTTPException(status_code=400, detail=msg)
-
-    upload_dir = Path(f"uploads/proof/{current_user.id}")
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
-    file_path = str(upload_dir / f"{user_activity_id}_{file.filename}")
-
-    content = await file.read()
-    with open(file_path, "wb") as f:
-        f.write(content)
-
-    activity.proof_document = file_path
-    activity.status_id = 3  # Submitted
-    activity.submission_count += 1
-    db.commit()
-    db.refresh(activity)
-
-    return {"message": "Proof submitted", "status": "Submitted"}
+    return {
+        "id": activity.id,
+        "activity_id": activity.activity_id,
+        "title": activity.title,
+        "activity_details": activity.activity_details,
+        "status": activity.status,
+        "event_type": activity.event_type,
+        "stage_id": activity.stage_id,
+        "activity_start_date": activity.activity_start_date,
+        "activity_end_date": activity.activity_end_date,
+    }
 
 
-@router.post("/teacher-review/{activity_id}")
-async def teacher_review_endpoint(
+# Teacher endpoints
+@router.get("/teacher/students")
+def get_teacher_students_list(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get students assigned to current teacher"""
+    return get_teacher_students(db, current_user.id)
+
+
+@router.get("/teacher/students/{student_id}/activities")
+def get_student_activities_for_teacher(
+    student_id: int,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+    status: Optional[int] = None,
+):
+    """Get activities for a specific student"""
+    # Validate teacher access
+    valid, msg = validate_teacher_access(db, current_user.id, student_id)
+    if not valid:
+        raise HTTPException(status_code=403, detail=msg)
+
+    activities = get_teacher_student_activities(db, current_user.id, status)
+    return [
+        {
+            "id": a.id,
+            "activity_id": a.activity_id,
+            "title": a.title,
+            "status": a.status,
+        }
+        for a in activities
+    ]
+
+
+@router.post("/teacher/review/{activity_id}")
+def teacher_review_activity(
     activity_id: int,
     request: TeacherReviewRequest,
-    current_user=Depends(require_staff),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Teacher approves or rejects an activity"""
     result = teacher_review(
         db=db,
         activity_id=activity_id,
@@ -306,304 +268,41 @@ async def teacher_review_endpoint(
 
     if result == "not_found":
         raise HTTPException(status_code=404, detail="Activity not found")
-    if result == "You are not assigned to this student":
-        raise HTTPException(
-            status_code=403, detail="You are not assigned to this student"
-        )
     if result == "invalid_status":
-        raise HTTPException(
-            status_code=400, detail="Can only review Pending or Submitted activities"
-        )
-    if result == "cannot_approve_without_submission":
-        raise HTTPException(
-            status_code=400,
-            detail="Cannot approve. Student must submit certificate first.",
-        )
-    if result == "rejection_reason_required":
-        raise HTTPException(
-            status_code=400,
-            detail="Rejection reason is required when rejecting from Submitted status",
-        )
-    if result == "invalid_action":
-        raise HTTPException(
-            status_code=400, detail="Invalid action. Use 'approve' or 'reject'"
-        )
+        raise HTTPException(status_code=400, detail="Cannot review this activity")
+    if isinstance(result, str):
+        raise HTTPException(status_code=400, detail=result)
 
-    return {
-        "message": f"Activity {request.action}d",
-        "status": result.status_id,
-        "rejection_reason": result.rejection_reason,
-        "tokens_earned": result.tokens_earned,
-    }
+    return {"status": "reviewed", "action": request.action}
 
 
-@router.post("/{user_activity_id}/undelete", response_model=UserActivityResponse)
-def undelete_activity(
-    user_activity_id: int,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    result = undelete_user_activity(
-        db=db,
-        user_activity_id=user_activity_id,
-        user_id=current_user.id,
-    )
-    if result == "not_found":
-        raise HTTPException(status_code=404, detail="Activity not found")
-    if result == "restored":
-        activity = get_user_activity_by_id(db, user_activity_id, current_user.id)
-        return activity
-    raise HTTPException(status_code=400, detail="Failed to restore activity")
-
-
-@router.delete("/{user_activity_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_my_activity(
-    user_activity_id: int,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    result = delete_user_activity(
-        db=db,
-        user_activity_id=user_activity_id,
-        user_id=current_user.id,
-    )
-    if result == "not_found":
-        raise HTTPException(status_code=404, detail="Activity not found")
-    if result == "invalid_status":
-        raise HTTPException(
-            status_code=400, detail="Can only delete when status is PENDING"
-        )
-    return None
-
-
-@router.get("/", response_model=List[UserActivityResponse])
-def get_my_activities(
-    skip: int = 0,
-    limit: int = 10,
-    include_deleted: bool = False,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    return get_user_activities(
-        db, current_user.id, skip=skip, limit=limit, include_deleted=include_deleted
-    )
-
-
-@router.get("/teacher/students-activities", response_model=List[UserActivityResponse])
-def get_teacher_students_activities(
-    status_id: Optional[int] = None,
-    current_user=Depends(require_staff),
-    db: Session = Depends(get_db),
-):
-    """Get activities for all students assigned to the teacher"""
-    activities = get_teacher_student_activities(db, current_user.id, status_id)
-    return activities
-
-
-@router.get("/{user_activity_id}", response_model=UserActivityResponse)
-def get_my_activity(
-    user_activity_id: int,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    user_activity = get_user_activity_by_id(db, user_activity_id, current_user.id)
-    if not user_activity:
-        raise HTTPException(status_code=404, detail="Activity not found")
-    return user_activity
-
-
-# ============================================================================
-# GET ALL STUDENTS FOR TEACHER
-# ============================================================================
-@router.get("/teacher/students", response_model=List[dict])
-def get_teacher_students_endpoint(
-    current_user=Depends(require_staff), db: Session = Depends(get_db)
-):
-    students = get_teacher_students(db, current_user.id)
-    return [
-        {
-            "id": s.id,
-            "register_no": s.register_no,
-            "name": s.name,
-            "email_id": s.email_id,
-            "total_tokens": s.total_tokens,
-            "is_active": s.is_active,
-        }
-        for s in students
-    ]
-
-
-# ============================================================================
-# GET STUDENT PROFILE
-# ============================================================================
-@router.get("/teacher/students/{student_id}")
-def get_student_profile_endpoint(
-    student_id: int,
-    current_user=Depends(require_staff),
-    db: Session = Depends(get_db),
-):
-    student = get_student_profile(db, student_id, current_user.id)
-    if not student:
-        raise HTTPException(
-            403, "You are not assigned to this student or student is inactive"
-        )
-
-    from database.models.master.program_dept_master import ProgramDeptMaster
-    from database.models.master.gender_master import GenderMaster
-
-    dept = (
-        db.query(ProgramDeptMaster)
-        .filter(ProgramDeptMaster.id == student.program_dept_id)
-        .first()
-    )
-    gender = db.query(GenderMaster).filter(GenderMaster.id == student.gender_id).first()
-
-    return {
-        "id": student.id,
-        "register_no": student.register_no,
-        "name": student.name,
-        "email_id": student.email_id,
-        "contact_no": student.contact_no,
-        "department": dept.branch if dept else None,
-        "program": dept.program if dept else None,
-        "semester": student.semester,
-        "batch": f"{student.batch_start_year}-{student.batch_end_year}",
-        "gender": gender.gender_name if gender else None,
-        "blood_group": student.blood_grp,
-        "github_url": student.github_url,
-        "linkedin_url": student.linkedin_url,
-        "total_tokens": student.total_tokens,
-        "is_active": student.is_active,
-    }
-
-
-# ============================================================================
-# GET STUDENT ACTIVITIES BY STATUS
-# ============================================================================
-@router.get("/teacher/students/{student_id}/activities")
-def get_student_activities_by_status_endpoint(
-    student_id: int,
-    current_user=Depends(require_staff),
-    db: Session = Depends(get_db),
-):
-    result = get_student_activities_by_status(db, student_id, current_user.id)
-    if result is None:
-        raise HTTPException(
-            403, "You are not assigned to this student or student is inactive"
-        )
-    return result
-
-
-# ============================================================================
-# GET STUDENT GOALS
-# ============================================================================
-@router.get("/teacher/students/{student_id}/goals")
-def get_student_goals_endpoint(
-    student_id: int,
-    current_user=Depends(require_staff),
-    db: Session = Depends(get_db),
-):
-    from schemas.mapping.student_goal import StudentGoalResponse
-
-    goals = get_student_goals(db, student_id, current_user.id)
-    if goals is None:
-        raise HTTPException(
-            403, "You are not assigned to this student or student is inactive"
-        )
-    return goals
-
-
-# ============================================================================
-# APPLY MALPRACTICE
-# ============================================================================
-@router.post("/teacher/students/{student_id}/malpractice")
-def apply_malpractice_endpoint(
-    student_id: int,
+@router.post("/teacher/malpractice")
+def apply_student_malpractice(
     request: MalpracticeApply,
-    current_user=Depends(require_staff),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Apply malpractice penalty to a student"""
     result = apply_malpractice(
-        db, student_id, current_user.id, request.malpractice_id, request.description
+        db=db,
+        student_id=request.student_id,
+        malpractice_id=request.malpractice_id,
+        teacher_user_id=current_user.id,
     )
 
-    if result == "not_assigned":
-        raise HTTPException(403, "You are not assigned to this student")
-    if result == "student_not_found":
-        raise HTTPException(404, "Student not found")
-    if result == "student_inactive":
-        raise HTTPException(400, "Cannot perform operation on inactive student")
     if result == "malpractice_not_found":
-        raise HTTPException(404, "Malpractice type not found")
-    if result == "insufficient_tokens":
-        raise HTTPException(400, "Student does not have enough tokens")
+        raise HTTPException(status_code=404, detail="Malpractice type not found")
+    if isinstance(result, str):
+        raise HTTPException(status_code=400, detail=result)
 
-    return {
-        "message": "Malpractice applied successfully",
-        "token_deducted": result.token_deducted,
-        "remaining_tokens": result.student.total_tokens,
-    }
+    return {"status": "applied"}
 
 
-# ============================================================================
-# REVERSE SELECTED MALPRACTICE (Multiple)
-# ============================================================================
-@router.post("/teacher/students/{student_id}/malpractice/reverse-selected")
-def reverse_selected_malpractice_endpoint(
+@router.get("/teacher/malpractice/{student_id}")
+def get_student_malpractice_list(
     student_id: int,
-    request: List[int],
-    current_user=Depends(require_staff),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    result = reverse_selected_malpractice(db, student_id, current_user.id, request)
-
-    if result == "not_assigned":
-        raise HTTPException(403, "You are not assigned to this student")
-    if result == "student_not_found":
-        raise HTTPException(404, "Student not found")
-    if result == "student_inactive":
-        raise HTTPException(400, "Cannot perform operation on inactive student")
-    if result == "no_records_found":
-        raise HTTPException(404, "No valid malpractice records found to reverse")
-
-    return {
-        "message": f"Successfully reversed {result['reversed_count']} malpractice record(s)",
-        "tokens_returned": result["tokens_returned"],
-        "remaining_tokens": result["remaining_tokens"],
-    }
-
-
-# ============================================================================
-# GET STUDENT MALPRACTICE HISTORY
-# ============================================================================
-@router.get("/teacher/students/{student_id}/malpractice")
-def get_student_malpractice_endpoint(
-    student_id: int,
-    current_user=Depends(require_staff),
-    db: Session = Depends(get_db),
-):
-    incidents = get_student_malpractice(db, student_id, current_user.id)
-    if incidents is None:
-        raise HTTPException(
-            403, "You are not assigned to this student or student is inactive"
-        )
-
-    result = []
-    for incident in incidents:
-        malpractice = (
-            db.query(MalpracticeMaster)
-            .filter(MalpracticeMaster.id == incident.malpractice_id)
-            .first()
-        )
-        result.append(
-            {
-                "id": incident.id,
-                "malpractice_name": malpractice.name if malpractice else "Unknown",
-                "token_deducted": incident.token_deducted,
-                "description": incident.description,
-                "is_reversed": incident.is_reversed,
-                "created_date": incident.created_date,
-            }
-        )
-
-    return result
+    """Get malpractice records for a student"""
+    return get_student_malpractice(db, student_id)
