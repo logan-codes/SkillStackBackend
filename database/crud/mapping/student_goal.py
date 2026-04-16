@@ -143,7 +143,7 @@ class StudentGoalRepo:
             )
 
             if activity:
-                target_token = activity.token
+                target_token = activity.base_token
                 total_target_tokens += target_token
 
                 # Get completed activities for this user/activity
@@ -157,7 +157,7 @@ class StudentGoalRepo:
                     )
                     .first()
                 )
-                current_token = activity.token if completed else 0
+                current_token = activity.base_token if completed else 0
                 total_current_tokens += current_token
 
                 goal_details.append(
