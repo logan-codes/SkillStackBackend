@@ -341,11 +341,9 @@ def get_student_token_transactions(
 def get_global_leaderboard(
     department_id: Optional[int] = Query(None, description="Filter by department ID"),
     year: Optional[int] = Query(None, description="Filter by year (1, 2, 3, 4)"),
-    section: Optional[str] = Query(
-        None, description="Filter by section (e.g., A1, B2)"
-    ),
-    class_coordinator_id: Optional[int] = Query(
-        None, description="Filter by class coordinator (teacher) ID"
+    section: Optional[str] = Query(None, description="Filter by section (e.g., A, B)"),
+    teacher_id: Optional[int] = Query(
+        None, description="Filter by teacher ID (shows students assigned to teacher)"
     ),
     limit: int = Query(10, ge=1, le=100, description="Number of results"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),
@@ -358,7 +356,7 @@ def get_global_leaderboard(
         department_id=department_id,
         year=year,
         section=section,
-        class_coordinator_id=class_coordinator_id,
+        teacher_id=teacher_id,
         limit=limit,
         offset=offset,
     )

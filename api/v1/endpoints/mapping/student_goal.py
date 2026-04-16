@@ -32,14 +32,14 @@ def get_available_activities(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get all activities available for student goals"""
+    """Get all activities available for student goals (generic only)"""
     activities = db.query(ActivityMaster).filter(ActivityMaster.is_active == 1).all()
+
     return [
         {
             "id": a.id,
             "activity_name": a.activity_name,
-            "token": a.token,
-            "activity_type_id": a.activity_type_id,
+            "token": a.base_token,
         }
         for a in activities
     ]
@@ -79,7 +79,7 @@ def get_my_goals(
                 "id": goal.id,
                 "activity_id": goal.activity_id,
                 "activity_name": activity.activity_name if activity else "Unknown",
-                "token": activity.token if activity else 0,
+                "token": activity.base_token if activity else 0,
                 "target_month": goal.target_month,
                 "is_completed": completed is not None,
             }
@@ -125,9 +125,84 @@ def delete_goals(
     """Delete multiple student goals"""
     repo = StudentGoalRepo(db)
 
+    # Get current goals
+    current_goals = repo.get_user_goals(current_user.id)
+    current_goal_ids = [g.id for g in current_goals]
+
+    # Check if any of the requested goals are completed
+    completed_goal_ids = []
+    for g in current_goals:
+        if g.id in request.goal_ids:
+            completed = (
+                db.query(UserActivityMapping)
+                .filter(
+                    UserActivityMapping.user_id == current_user.id,
+                    UserActivityMapping.activity_id == g.activity_id,
+                    UserActivityMapping.status == 3,
+                    UserActivityMapping.is_active == 1,
+                )
+                .first()
+            )
+            if completed:
+                activity = (
+                    db.query(ActivityMaster)
+                    .filter(ActivityMaster.id == g.activity_id)
+                    .first()
+                )
+                completed_goal_ids.append(
+                    {
+                        "goal_id": g.id,
+                        "activity_name": activity.activity_name
+                        if activity
+                        else "Unknown",
+                    }
+                )
+
+    if completed_goal_ids:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Cannot delete: some activities are already completed",
+                "completed_goals": completed_goal_ids,
+            },
+        )
+
+    # Check if deletion would reduce goals below minimum
+    remaining_after_delete = len(current_goals) - len(request.goal_ids)
+
+    if remaining_after_delete < MIN_GOALS:
+        current_activity_ids = [g.activity_id for g in current_goals]
+        available_activities = (
+            db.query(ActivityMaster)
+            .filter(
+                ActivityMaster.is_active == 1,
+                ~ActivityMaster.id.in_(current_activity_ids),
+            )
+            .all()
+        )
+
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": f"Cannot delete {len(request.goal_ids)} goals: would reduce to {remaining_after_delete} (minimum {MIN_GOALS})",
+                "current_goals": len(current_goals),
+                "after_deletion": remaining_after_delete,
+                "minimum_required": MIN_GOALS,
+                "suggestion": f"Add {MIN_GOALS - remaining_after_delete} more replacement activities first",
+                "available_activities": [
+                    {
+                        "id": a.id,
+                        "activity_name": a.activity_name,
+                        "token": a.base_token,
+                    }
+                    for a in available_activities
+                ],
+            },
+        )
+
     count = repo.delete_goals_bulk(request.goal_ids)
 
-    return {"deleted": count}
+    return {"deleted": count, "remaining_goals": remaining_after_delete}
 
 
 @router.delete("/{goal_id}")
@@ -146,8 +221,60 @@ def delete_single_goal(
     if goal.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
+    # Check if goal is already completed
+    completed = (
+        db.query(UserActivityMapping)
+        .filter(
+            UserActivityMapping.user_id == current_user.id,
+            UserActivityMapping.activity_id == goal.activity_id,
+            UserActivityMapping.status == 3,
+            UserActivityMapping.is_active == 1,
+        )
+        .first()
+    )
+
+    if completed:
+        raise HTTPException(
+            status_code=400, detail="Cannot delete: this activity is already completed"
+        )
+
+    # Check if deletion would reduce goals below minimum
+    current_goals = repo.get_user_goals(current_user.id)
+    remaining_after_delete = len(current_goals) - 1
+
+    if remaining_after_delete < MIN_GOALS:
+        # Get activities not already in goals
+        current_activity_ids = [g.activity_id for g in current_goals]
+        available_activities = (
+            db.query(ActivityMaster)
+            .filter(
+                ActivityMaster.is_active == 1,
+                ~ActivityMaster.id.in_(current_activity_ids),
+            )
+            .all()
+        )
+
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": f"Cannot delete: would reduce goals below {MIN_GOALS}",
+                "current_goals": len(current_goals),
+                "after_deletion": remaining_after_delete,
+                "minimum_required": MIN_GOALS,
+                "suggestion": "Add a replacement activity first, then delete this goal",
+                "available_activities": [
+                    {
+                        "id": a.id,
+                        "activity_name": a.activity_name,
+                        "token": a.base_token,
+                    }
+                    for a in available_activities
+                ],
+            },
+        )
+
     repo.delete_goal(goal_id)
-    return {"status": "deleted"}
+    return {"status": "deleted", "remaining_goals": remaining_after_delete}
 
 
 @router.get("/validate")

@@ -10,10 +10,7 @@ result = conn.execute(
 )
 db_tables = sorted([r[0] for r in result.fetchall()])
 
-print("=== DATABASE TABLES (22) ===")
-for t in db_tables:
-    print(f"  - {t}")
-
+# ORM models that should exist (based on user's actual local DB - 19 tables)
 orm_tables = [
     "activity",
     "activity_type_master",
@@ -29,7 +26,6 @@ orm_tables = [
     "stage",
     "status",
     "student_goal",
-    "student_malpractice",
     "user_activity_mapping",
     "user_token_mapping",
     "users",
@@ -37,25 +33,34 @@ orm_tables = [
     "workflow_stage_mapping",
 ]
 
-print("\n=== ORM MODELS (20) ===")
+print("=== DATABASE TABLES ===")
+for t in db_tables:
+    print(f"  - {t}")
+print(f"\nTotal DB tables: {len(db_tables)}")
+
+print("\n=== ORM MODELS ===")
 for t in orm_tables:
     print(f"  - {t}")
+print(f"\nTotal ORM tables: {len(orm_tables)}")
 
-print("\n=== MATCHING STATUS ===")
+print("\n=== COMPARISON ===")
 db_set = set(db_tables)
 orm_set = set(orm_tables)
 
 matching = db_set & orm_set
-print(f"Matching tables: {len(matching)}")
+print(f"Matching: {len(matching)} tables")
 
 only_db = db_set - orm_set
 if only_db:
-    print(f"\nTables in DB but NOT in ORM: {only_db}")
+    print(f"\nIn DB but NOT in ORM (extra in DB): {only_db}")
 
 only_orm = orm_set - db_set
 if only_orm:
-    print(f"\nTables in ORM but NOT in DB (ERROR): {only_orm}")
+    print(f"\nIn ORM but NOT in DB (MISSING from DB): {only_orm}")
+
+if only_orm:
+    print("\n⚠️ PROBLEM: ORM references tables not in DB!")
 else:
-    print("\nAll ORM models match database tables!")
+    print("\n✅ All ORM models match database tables!")
 
 conn.close()

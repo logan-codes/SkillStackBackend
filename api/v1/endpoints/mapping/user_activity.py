@@ -17,8 +17,6 @@ from database.crud.mapping.user_activity_mapping import (
     get_teacher_students,
     get_teacher_student_activities,
     apply_malpractice,
-    reverse_malpractice,
-    get_student_malpractice,
 )
 from core.auth import get_current_user
 from database.models.master.malpractice_master import MalpracticeMaster
@@ -296,13 +294,3 @@ def apply_student_malpractice(
         raise HTTPException(status_code=400, detail=result)
 
     return {"status": "applied"}
-
-
-@router.get("/teacher/malpractice/{student_id}")
-def get_student_malpractice_list(
-    student_id: int,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Get malpractice records for a student"""
-    return get_student_malpractice(db, student_id)

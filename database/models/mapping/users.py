@@ -24,6 +24,7 @@ class User(Base):
     program_dept_id = Column(BigInteger, nullable=True)
     year = Column(SmallInteger, nullable=True)
     semester = Column(SmallInteger, nullable=True)
+    section = Column(String(10), nullable=True)
     cgpa = Column(Numeric(3, 2), nullable=True)
     batch_start_year = Column(SmallInteger, nullable=True)
     batch_end_year = Column(SmallInteger, nullable=True)

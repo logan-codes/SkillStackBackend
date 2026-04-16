@@ -31,7 +31,7 @@ def get_leaderboard(
     department_id: Optional[int] = None,
     year: Optional[int] = None,
     section: Optional[str] = None,
-    class_coordinator_id: Optional[int] = None,
+    teacher_id: Optional[int] = None,
     limit: int = 10,
     offset: int = 0,
 ):
@@ -43,19 +43,20 @@ def get_leaderboard(
         query = query.filter(User.year == year)
     if section:
         query = query.filter(User.section == section)
-    if class_coordinator_id:
-        section_mapping = (
+    if teacher_id:
+        # Get students assigned to this teacher
+        mappings = (
             db.query(StaffStudentMapping)
             .filter(
-                StaffStudentMapping.staff_id == class_coordinator_id,
-                StaffStudentMapping.mapping_type == "ClassCoordinator",
+                StaffStudentMapping.staff_id == teacher_id,
+                StaffStudentMapping.is_active == 1,
             )
-            .first()
+            .all()
         )
-        if section_mapping and section_mapping.section:
-            query = query.filter(User.section == section_mapping.section)
-        else:
+        student_ids = [m.student_id for m in mappings]
+        if not student_ids:
             return [], 0
+        query = query.filter(User.id.in_(student_ids))
 
     total_count = query.count()
     results = query.order_by(User.total_tokens.desc()).offset(offset).limit(limit).all()

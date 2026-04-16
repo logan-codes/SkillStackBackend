@@ -1,7 +1,7 @@
 # database/models/master/__init__.py
 # Master/Reference tables
 
-from database.models.master.activity_master import ActivityMaster
+from database.models.master.activity_master import ActivityMaster, ActivityCategory
 from database.models.master.activity_type_master import ActivityTypeMaster
 from database.models.master.application_config import ApplicationConfig
 from database.models.master.event_master import EventMaster
@@ -15,6 +15,7 @@ from database.models.master.workflow import Workflow
 
 __all__ = [
     "ActivityMaster",
+    "ActivityCategory",
     "ActivityTypeMaster",
     "ApplicationConfig",
     "EventMaster",
